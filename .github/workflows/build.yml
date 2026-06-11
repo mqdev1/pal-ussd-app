@@ -2,12 +2,15 @@ name: Build Flet APK
 
 on:
   pull_request:
-  workflow_dispatch:
+  workflow_dispatch: # يتيح لك تشغيل البناء يدوياً من تبويب Actions
 
 jobs:
   build:
-    name: Build debug APK with Flet
+    name: Build APK with Flet
     runs-on: ubuntu-latest
+    permissions: # ضروري لمنح الأكشن صلاحية إنشاء الـ Release ورفع الملف
+      contents: write 
+
     steps:
       - uses: actions/checkout@v4
     
@@ -16,10 +19,10 @@ jobs:
         with:
           python-version: '3.9'
 
-      - name: Set up Java JDK 11
+      - name: Set up Java JDK 17
         uses: actions/setup-java@v4
         with:
-          java-version: '11'
+          java-version: '17'
           distribution: 'temurin'
 
       - name: Install Flet
@@ -27,15 +30,22 @@ jobs:
           python -m pip install --upgrade pip
           pip install flet
 
-      - name: Build APK (with verbose output)
+      - name: Build APK
         run: flet build apk -v
 
-      - name: List all files created
-        run: find . -type f -name "*.apk" || echo "No APK files found"
+      # خطوة تحديد مسار الملف وتعديل اسمه إلى ussd-jawwal.apk
+      - name: Prepare APK for Upload
+        run: |
+          APK_PATH=$(find build/apk -name "*.apk" | head -n 1)
+          cp "$APK_PATH" ussd-jawwal.apk
+          echo "FINAL_APK=ussd-jawwal.apk" >> $GITHUB_ENV
 
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
+      # رفع الملف مباشرة إلى الـ Releases لتحصل على رابط تحميل مباشر وغير مضغوط
+      - name: Create Release and Upload APK
+        uses: softprops/action-gh-release@v2
         with:
-          name: apk-debug
-          path: .
-          retention-days: 5
+          tag_name: v1.0.${{ github.run_number }}
+          name: Release v1.0.${{ github.run_number }}
+          files: ${{ env.FINAL_APK }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
