@@ -1,22 +1,26 @@
 name: Build Flutter Flet APK
 on: [push, workflow_dispatch]
 
+# تفعيل البيئة الجديدة لتشغيل Node 24 وتخطي تحذيرات جيت هاب المؤقتة
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
     steps:
       # 1. سحب ملفات مشروعك داخل السيرفر السريع
       - name: Checkout code
-        uses: actions/checkout@v4 # تحديث للإصدار الجديد
+        uses: actions/checkout@v4
 
       # 2. إعداد جافا المطلوبة لنظام أندرويد
       - name: Set up JDK 17
-        uses: actions/setup-java@v4 # تحديث للإصدار الجديد
+        uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
 
-      # 3. تحميل وإعداد فلوتر النسخة 3 في أقل من 10 ثوانٍ!
+      # 3. تحميل وإعداد فلوتر النسخة 3 في أجزاء من الثانية
       - name: Set up Flutter 3
         uses: subosito/flutter-action@v2
         with:
@@ -24,7 +28,7 @@ jobs:
 
       # 4. تثبيت لغة بايثون و Flet للتجميع
       - name: Set up Python
-        uses: actions/setup-python@v5 # تحديث للإصدار الجديد
+        uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
@@ -34,9 +38,9 @@ jobs:
           pip install flet
           flet build apk --release
 
-      # 6. الرفع باستخدام الإصدار الحديث والمستقر v4 لتخطي الخطأ
+      # 6. الرفع الآمن للملف النهائي لتقوم بتحميله فوراً
       - name: Upload APK Artifact
-        uses: actions/upload-artifact@v4 # التعديل الحرج هنا لحل المشكلة
+        uses: actions/upload-artifact@v4
         with:
           name: PalUSSD-App-Digital
           path: build/apk/*.apk
