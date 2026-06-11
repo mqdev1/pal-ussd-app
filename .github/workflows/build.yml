@@ -1,7 +1,6 @@
 name: Build Flutter Flet APK
 on: [push, workflow_dispatch]
 
-# تفعيل البيئة الجديدة لتشغيل Node 24 وتخطي تحذيرات جيت هاب المؤقتة
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
@@ -26,17 +25,18 @@ jobs:
         with:
           flutter-version: '3.x'
 
-      # 4. تثبيت لغة بايثون و Flet للتجميع
+      # 4. تثبيت لغة بايثون وتجهيز البيئة
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.10'
 
-      # 5. بناء وتوليد ملف APK الافتراضي والسريع عبر Flet
+      # 5. التعديل الحرج: تثبيت flet وتمرير مسار المجلد الحالي (.) بدقة لمنع الخطأ 2
       - name: Build Android APK
         run: |
+          pip install --upgrade pip
           pip install flet
-          flet build apk --release
+          flet build apk . --release
 
       # 6. الرفع الآمن للملف النهائي لتقوم بتحميله فوراً
       - name: Upload APK Artifact
