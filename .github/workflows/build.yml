@@ -19,7 +19,7 @@ jobs:
           distribution: 'zulu'
           java-version: '17'
 
-      # 3. تحميل وإعداد فلوتر النسخة 3 في أجزاء من الثانية
+      # 3. تحميل وإعداد فلوتر النسخة 3
       - name: Set up Flutter 3
         uses: subosito/flutter-action@v2
         with:
@@ -31,14 +31,20 @@ jobs:
         with:
           python-version: '3.10'
 
-      # 5. التعديل الجوهري: تثبيت حزم لينكس الأساسية لمنع الفشل والخطأ 2
+      # 5. التعديل الجذري: إنشاء ملف تهيئة flet برمجياً وتشغيل البناء المفصل
       - name: Build Android APK
         run: |
           sudo apt-get update
           sudo apt-get install -y libnetfilter-queue-dev libgl1-mesa-dev
           pip install --upgrade pip
           pip install flet
-          flet build apk . --release
+          
+          # إنشاء ملف التكوين الافتراضي لـ flet لمنع الانهيار
+          echo "app:" > flet.yaml
+          echo "  main_module: main" >> flet.yaml
+          
+          # تشغيل البناء مع طباعة تفصيلية للأخطاء
+          flet build apk --verbose
 
       # 6. الرفع الآمن للملف النهائي لتقوم بتحميله فوراً
       - name: Upload APK Artifact
