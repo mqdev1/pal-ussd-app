@@ -2,13 +2,13 @@ name: Build Flet APK
 
 on:
   pull_request:
-  workflow_dispatch: # يتيح لك تشغيل البناء يدوياً من تبويب Actions
+  workflow_dispatch: 
 
 jobs:
   build:
     name: Build APK with Flet
     runs-on: ubuntu-latest
-    permissions: # ضروري لمنح الأكشن صلاحية إنشاء الـ Release ورفع الملف
+    permissions: 
       contents: write 
 
     steps:
@@ -28,15 +28,20 @@ jobs:
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install flet pyjnius # تثبيت flet و pyjnius لبيئة البناء
+          pip install flet pyjnius
+
+      # هذه الخطوة تضمن دمج pyjnius داخل الـ APK بدون استخدام علامات غير مدعومة
+      - name: Create Requirements File for Flet Build
+        run: |
+          echo "flet" > requirements.txt
+          echo "pyjnius" >> requirements.txt
 
       - name: Build APK
-        # استخدام --packages pyjnius لضمان تضمين المكتبة داخل الـ APK النهائي للاندرويد
-        run: flet build apk --packages pyjnius -v
+        # عدنا للأمر القياسي الصحيح الذي يقبله فليت
+        run: flet build apk -v
 
       - name: Prepare APK for Upload
         run: |
-          # البحث عن ملف الـ APK وتغيير اسمه إلى ussd-jawwal.apk
           APK_PATH=$(find build/apk -name "*.apk" | head -n 1)
           if [ -z "$APK_PATH" ]; then
             echo "Error: APK file not found!"
@@ -50,7 +55,7 @@ jobs:
         with:
           tag_name: v1.0.${{ github.run_number }}
           name: Release v1.0.${{ github.run_number }}
-          body: "تم بناء التطبيق بنجاح. ملف الـ APK المرفق يحتوي على مكتبة jnius المطلوبة."
+          body: "تم إصلاح خطأ البناء وتضمين مكتبة pyjnius بنجاح داخل تطبيق ussd-jawwal.apk"
           files: ${{ env.FINAL_APK }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
