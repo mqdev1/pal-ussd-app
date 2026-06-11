@@ -25,27 +25,32 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Install Flet
+      - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install flet
+          pip install flet pyjnius # تثبيت flet و pyjnius لبيئة البناء
 
       - name: Build APK
-        run: flet build apk -v
+        # استخدام --packages pyjnius لضمان تضمين المكتبة داخل الـ APK النهائي للاندرويد
+        run: flet build apk --packages pyjnius -v
 
-      # خطوة تحديد مسار الملف وتعديل اسمه إلى ussd-jawwal.apk
       - name: Prepare APK for Upload
         run: |
+          # البحث عن ملف الـ APK وتغيير اسمه إلى ussd-jawwal.apk
           APK_PATH=$(find build/apk -name "*.apk" | head -n 1)
+          if [ -z "$APK_PATH" ]; then
+            echo "Error: APK file not found!"
+            exit 1
+          fi
           cp "$APK_PATH" ussd-jawwal.apk
           echo "FINAL_APK=ussd-jawwal.apk" >> $GITHUB_ENV
 
-      # رفع الملف مباشرة إلى الـ Releases لتحصل على رابط تحميل مباشر وغير مضغوط
       - name: Create Release and Upload APK
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.0.${{ github.run_number }}
           name: Release v1.0.${{ github.run_number }}
+          body: "تم بناء التطبيق بنجاح. ملف الـ APK المرفق يحتوي على مكتبة jnius المطلوبة."
           files: ${{ env.FINAL_APK }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
