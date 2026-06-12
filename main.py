@@ -1,29 +1,39 @@
 import flet as ft
-from views.Home_view import Home_view
 
 def main(page: ft.Page):
-    page.title = "USSD App"
+    # إعدادات بسيطة للشاشة
+    page.title = "Flet Minimum Test"
     page.theme_mode = ft.ThemeMode.LIGHT
+    page.vertical_alignment = ft.MainAxisAlignment.CENTER
+    page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
 
-    def route_change(e):
-        troute = ft.TemplateRoute(page.route)
-        if troute.match("/"):
-            page.views.clear()
-            page.views.append(Home_view(page))
+    # تنظيف الواجهة تماماً
+    page.controls.clear()
+
+    # دالة بسيطة عند النقر على الزر لتغيير النص للـ فحص
+    def button_click(e):
+        test_text.value = "تمت الاستجابة والنقر بنجاح! 🎉"
         page.update()
 
-    def view_pop(view):
-        if len(page.views) > 1:
-            page.views.pop()
-            top_view = page.views[-1]
-            page.go(top_view.route)
-        else:
-            page.window_close()
+    # عناصر الواجهة المباشرة
+    test_text = ft.Text(
+        value="تطبيق فحص الحد الأدنى (عامل بنجاح)", 
+        size=20, 
+        weight=ft.FontWeight.BOLD,
+        color=ft.Colors.BLACK
+    )
+    
+    test_button = ft.ElevatedButton(
+        text="اضغط هنا للفحص 🚀",
+        bgcolor=ft.Colors.BLUE_600,
+        color=ft.Colors.WHITE,
+        on_click=button_click
+    )
 
-    page.on_route_change = route_change
-    page.on_view_pop = view_pop
+    # إضافة العناصر مباشرة إلى قائمة التحكم الأساسية للـ page
+    page.add(test_text, test_button)
     
-    # الانطلاق فوراً للمسارح الرئيسي
-    page.go("/")
-    
+    # إجبار محرك الرندرة على الرسم فوراً
+    page.update()
+
 ft.app(target=main)
