@@ -25,11 +25,9 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      # تثبيت نسخة Flutter المتوافقة بدقة لتفادي السؤال التفاعلي
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.3' # نسخة مستقرة وممتازة لبيئات فليت الحديثة
           channel: 'stable'
 
       - name: Install Dependencies
@@ -37,7 +35,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install flet pyjnius
 
-      # تهيئة ملف flet.yaml لإضافة الصلاحيات ومسار التطبيق بشكل صارم
+      # إنشاء ملف flet.yaml القياسي لتثبيت الصلاحيات والمسار بشكل سليم
       - name: Ensure flet.yaml exists
         run: |
           echo "app:" > flet.yaml
@@ -46,9 +44,9 @@ jobs:
           echo "  permissions:" >> flet.yaml
           echo "    - android.permission.CALL_PHONE" >> flet.yaml
 
-      # استخدام أمر البناء مع إيقاف الأسئلة التفاعلية بشكل كامل
+      # الحل السحري لتجاوز أي أسئلة تفاعلية بدون إدخال أرجومنتس خاطئة
       - name: Build APK
-        run: flet build apk -v --no-interactive
+        run: yes | flet build apk -v
 
       - name: Prepare APK for Upload
         run: |
@@ -65,7 +63,7 @@ jobs:
         with:
           tag_name: v1.0.${{ github.run_number }}
           name: Release v1.0.${{ github.run_number }}
-          body: "تم إصلاح مشكلة الانتظار التفاعلي وتثبيت بيئة عمل Flet المستقرة."
+          body: "تم إصلاح واجهة الـ CLI وبناء التطبيق بشكل مستقل ومستقر بالكامل."
           files: ${{ env.FINAL_APK }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
