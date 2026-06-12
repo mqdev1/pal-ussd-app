@@ -3,15 +3,14 @@ import flet as ft
 def Home_view(page: ft.Page):
 
     # --- المتغيرات العالمية للتحكم في خطوات الـ USSD ---
-    CURRENT_SERVICE = None       # نوع الخدمة: "BOP" أو "PALPAY" أو "JAWWAL"
-    CURRENT_STEP = 0             # الخطوة الحالية في الـ State Machine
-    RECIPIENT = ""               # رقم حساب أو هاتف المستلم
-    AMOUNT = ""                  # المبلغ
-    PIN = ""                     # الرقم السري
-    PALPAY_ACCEPT_OPTION = "1"   # خيار التأكيد لـ PalPay (1 أو 2)
+    CURRENT_SERVICE = None       
+    CURRENT_STEP = 0             
+    RECIPIENT = ""               
+    AMOUNT = ""                  
+    PIN = ""                     
+    PALPAY_ACCEPT_OPTION = "1"   
 
     def dial_ussd(code: str):
-        # تأجيل استدعاء المكتبة إلى داخل الدالة لمنع تجمد التطبيق عند الإقلاع (ANR)
         try:
             from jnius import autoclass 
             
@@ -33,7 +32,7 @@ def Home_view(page: ft.Page):
         CURRENT_SERVICE = "PALPAY"
         CURRENT_STEP = 1
         PIN = pin_input.value
-        PALPAY_ACCEPT_OPTION = "1" # تم التثبيت بشكل افتراضي آمن لحين استخدام الـ Control الخاص بك
+        PALPAY_ACCEPT_OPTION = "1" 
         
         direct_string = f"*370*1*1*{phoneInput.value}*{amountInput.value}#"
         dial_ussd(direct_string)
@@ -64,7 +63,7 @@ def Home_view(page: ft.Page):
         disabled=True,
         bgcolor=ft.Colors.GREEN_600,
         color=ft.Colors.WHITE,
-        on_click=trigger_jawwal
+        on_click=trigger_jawwal # يمكنك تغييره حسب الخدمة المطلوبة ديناميكياً
     )
 
     def Alert(title, text):
@@ -243,8 +242,9 @@ def Home_view(page: ft.Page):
         )
     )
 
+    # تم تغيير المسار هنا ليكون مرناً ومأخوذاً من الـ page.route الفعلي لمنع الـ Loop اللاهوائي
     return ft.View(
-        "/",
+        route=page.route,
         padding=0,
         bgcolor='#f0f0f0',
         horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
