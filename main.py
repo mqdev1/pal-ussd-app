@@ -1,38 +1,20 @@
-
 import flet as ft
+from views.Home_view import Home_view  # تأكد من المسار الصحيح للملف
 
-from views.Home_view import Home_view
-
-def main(page:ft.Page):
-
-
-    page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
-    page.window.width = 400
-    page.window.height = 700
-
+def main(page: ft.Page):
+    # إعدادات الصفحة الأساسية
+    page.title = "USSD Jawwal"
     page.theme_mode = ft.ThemeMode.LIGHT
-
-    def route_change(e: ft.RouteChangeEvent):
-
+    
+    # دالة إدارة التنقل بين الصفحات (Routing)
+    def route_change(route):
         page.views.clear()
-        
-
-        page.views.append(Home_view(page))
-        
-
+        if page.route == "/":
+            # استدعاء الدالة التي عدلناها معاً
+            page.views.append(Home_view(page))
         page.update()
 
-    def view_pop(e: ft.ViewPopEvent):
-        page.views.pop()
-        top_view = page.views[-1]
-        page.go(top_view.route)
-
     page.on_route_change = route_change
-    page.on_view_pop = view_pop
-    
-    page.go(page.route)
+    page.go("/") # التوجه فوراً لصفحة البداية
 
-        
-
-if __name__ == '__main__':
-    ft.app(target=main,assets_dir="assets")
+ft.app(target=main)
