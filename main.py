@@ -1,55 +1,37 @@
 import flet as ft
-from views.Home_view import Home_view
+from views.Home_view import Home_view  # استيراد واجهتك الذكية
 
 def main(page: ft.Page):
-    page.title = "USSD Test App"
+    page.title = "USSD App"
     page.theme_mode = ft.ThemeMode.LIGHT
-    page.vertical_alignment = ft.MainAxisAlignment.CENTER
-    page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
 
-    # دالة الانتقال لصفحتك عند النقر على الزر
-    def go_to_home(e):
-        try:
-            page.views.clear()
-            # استدعاء صفحتك الأساسية ودفعها للـ Views
+    # دالة معالجة المسارات بناءً على التوثيق الرسمي (Cookbook)
+    def route_change(route):
+        # استخدام TemplateRoute للمطابقة الذكية للمسارات
+        troute = ft.TemplateRoute(page.route)
+        
+        page.views.clear()
+        
+        # إذا كان المسار هو الرئيسي، نقوم بدفع واجهتك فوراً
+        if troute.match("/"):
             page.views.append(Home_view(page))
-            page.update()
-        except Exception as error:
-            # إذا انهار التطبيق داخل Home_view سيطبع لك السبب هنا باللون الأصفر فوراً
-            page.add(
-                ft.Container(
-                    padding=15,
-                    bgcolor=ft.Colors.AMBER_900,
-                    content=ft.Text(f"خطأ داخل كود Home_view:\n{str(error)}", color=ft.Colors.WHITE)
-                )
-            )
-            page.update()
+            
+        page.update()
 
-    # شاشة البداية المؤقتة التي تحتوي على زرك المفسر
-    page.controls.clear()
-    page.add(
-        ft.Container(
-            alignment=ft.alignment.center,
-            padding=30,
-            content=ft.Column(
-                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                controls=[
-                    ft.Icon(name=ft.Icons.PHONELINK_SETUP, size=50, color=ft.Colors.BLUE),
-                    ft.Text("مرحباً بك في تطبيق الفحص", size=20, weight=ft.FontWeight.BOLD),
-                    ft.Text("اضغط على الزر أدناه لتشغيل الواجهة الرئيسية والتأكد من الـ Imports", size=14, color=ft.Colors.GREY_600, text_align=ft.TextAlign.CENTER),
-                    ft.VerticalDivider(height=20),
-                    # الزر الذي اقترحته أنت
-                    ft.ElevatedButton(
-                        text="دخول إلى الواجهة الرئيسية 🚀",
-                        color=ft.Colors.WHITE,
-                        bgcolor=ft.Colors.BLUE,
-                        on_click=go_to_home,
-                        style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=8))
-                    )
-                ]
-            )
-        )
-    )
-    page.update()
+    # دالة التعامل مع زر الرجوع (Pop) لضمان عدم تجمد الأندرويد
+    def view_pop(view):
+        if len(page.views) > 1:
+            page.views.pop()
+            top_view = page.views[-1]
+            page.go(top_view.route)
+        else:
+            page.window_close()
+
+    # ربط الأحداث بالصفحة كما توصي المقالة
+    page.on_route_change = route_change
+    page.on_view_pop = view_pop
+    
+    # التوجيه الافتراضي عند الإقلاع
+    page.go(page.route)
 
 ft.app(target=main)
