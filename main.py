@@ -1,5 +1,5 @@
 import flet as ft
-
+from views.Home_view import Home_view
 def main(page: ft.Page):
     # إعدادات الشاشة الأساسية لمنع التجمد
     page.title = "USSD Test App"
@@ -9,7 +9,7 @@ def main(page: ft.Page):
 
     try:
         # محاولة استدعاء الصفحة التي قمنا بتعديلها
-        from views.Home_view import Home_view
+
         
         # عرض الصفحة فوراً
         page.views.clear()
