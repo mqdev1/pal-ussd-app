@@ -2,7 +2,6 @@ import flet as ft
 
 def Home_view(page: ft.Page):
 
-    # --- المتغيرات العالمية للتحكم في خطوات الـ USSD ---
     CURRENT_SERVICE = None       
     CURRENT_STEP = 0             
     RECIPIENT = ""               
@@ -63,7 +62,7 @@ def Home_view(page: ft.Page):
         disabled=True,
         bgcolor=ft.Colors.GREEN_600,
         color=ft.Colors.WHITE,
-        on_click=trigger_jawwal # يمكنك تغييره حسب الخدمة المطلوبة ديناميكياً
+        on_click=trigger_jawwal 
     )
 
     def Alert(title, text):
@@ -134,7 +133,7 @@ def Home_view(page: ft.Page):
         text_align=ft.TextAlign.LEFT, 
         border_color=ft.Colors.TRANSPARENT, 
         text_style=ft.TextStyle(size=20), 
-        autofocus=True,
+        autofocus=False, # تم إيقافها هنا لإنهاء الشاشة البيضاء وحظر النظام
         expand=1,
         on_change=lambda _: validateInputs()
     )
@@ -242,7 +241,6 @@ def Home_view(page: ft.Page):
         )
     )
 
-    # تم تغيير المسار هنا ليكون مرناً ومأخوذاً من الـ page.route الفعلي لمنع الـ Loop اللاهوائي
     return ft.View(
         route=page.route,
         padding=0,
