@@ -14,10 +14,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
     
-      - name: Set up Python 3.9
+      - name: Set up Python 3.10
         uses: actions/setup-python@v5
         with:
-          python-version: '3.9'
+          python-version: '3.10'
 
       - name: Set up Java JDK 17
         uses: actions/setup-java@v4
@@ -28,16 +28,18 @@ jobs:
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install flet pyjnius
+          pip install flet==0.23.2 pyjnius 
 
-      # هذه الخطوة تضمن دمج pyjnius داخل الـ APK بدون استخدام علامات غير مدعومة
-      - name: Create Requirements File for Flet Build
+      # تم تصحيح المسافات وإضافة الشرطة (-) قبل اسم الخطوة
+      - name: Ensure flet.yaml exists
         run: |
-          echo "flet" > requirements.txt
-          echo "pyjnius" >> requirements.txt
+          echo "app:" > flet.yaml
+          echo "  path: ." >> flet.yaml
+          echo "android:" >> flet.yaml
+          echo "  permissions:" >> flet.yaml
+          echo "    - android.permission.CALL_PHONE" >> flet.yaml
 
       - name: Build APK
-        # عدنا للأمر القياسي الصحيح الذي يقبله فليت
         run: flet build apk -v
 
       - name: Prepare APK for Upload
@@ -55,7 +57,7 @@ jobs:
         with:
           tag_name: v1.0.${{ github.run_number }}
           name: Release v1.0.${{ github.run_number }}
-          body: "تم إصلاح خطأ البناء وتضمين مكتبة pyjnius بنجاح داخل تطبيق ussd-jawwal.apk"
+          body: "تم ضبط البيئة المستقرة وإنشاء ملف الإعدادات المخصص بنجاح لتجنب تجمد التطبيق."
           files: ${{ env.FINAL_APK }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
