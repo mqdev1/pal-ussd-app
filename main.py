@@ -6,20 +6,32 @@ def main(page: ft.Page):
     page.theme_mode = ft.ThemeMode.LIGHT
     page.vertical_alignment = ft.MainAxisAlignment.CENTER
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
-    page.controls.clear()
-    page.add(
+
+    try:
+        # محاولة استدعاء الصفحة التي قمنا بتعديلها
+        from views.Home_view import Home_view
+        
+        # عرض الصفحة فوراً
+        page.views.clear()
+        page.views.append(Home_view(page))
+        page.update()
+
+    except Exception as e:
+        # إذا كان هناك أي خطأ (في الـ imports أو الكود) سيظهر هنا فوراً على الشاشة
+        page.controls.clear()
+        page.add(
             ft.Container(
                 padding=20,
                 bgcolor=ft.Colors.RED_500,
                 border_radius=10,
                 content=ft.Column(
                     controls=[
-                        ft.Text("⚠️ تم اكتشاف خطأ يمنع تشغيل التطبيق:", color=ft.Colors.GREY, size=18, weight=ft.FontWeight.BOLD),
-                        ft.Text("Mahmoud qasem", color=ft.Colors.GREY, size=14, selectable=True)
+                        ft.Text("⚠️ تم اكتشاف خطأ يمنع تشغيل التطبيق:", color=ft.Colors.WHITE, size=18, weight=ft.FontWeight.BOLD),
+                        ft.Text(str(e), color=ft.Colors.WHITE, size=14, selectable=True)
                     ]
                 )
             )
         )
-    page.update()
+        page.update()
 
 ft.app(target=main)
