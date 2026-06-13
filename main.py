@@ -13,10 +13,9 @@ PALPAY_ACCEPT_OPTION = "1"
 
 def main(page: ft.Page):
     try:
-        # إعدادات الشاشة الأساسية
+        # إعدادات الشاشة الأساسية وتفعيل الدعم العربي الكامل
         page.title = "تطبيق USSD"
-        page.window_width = 400
-        page.window_height = 800
+        page.rtl = True  # تفعيل اتجاه النص من اليمين إلى اليسار للغة العربية
         page.theme_mode = ft.ThemeMode.LIGHT
         page.padding = 20
         page.spacing = 20
@@ -83,7 +82,7 @@ def main(page: ft.Page):
             italic=True
         )
         
-        # إنشاء حاوية (Container) لتجنب مشاكل التصيير
+        # استخدام Column بداخل Container لضمان استقرار الأبعاد على الجوال
         main_container = ft.Column(
             controls=[
                 header,
@@ -96,8 +95,7 @@ def main(page: ft.Page):
             ],
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             spacing=15,
-            expand=False,
-            auto_scroll=True
+            expand=True # جعل العمود يتمدد لملء الشاشة لمنع الشاشة السوداء
         )
         
         # إضافة المحتوى إلى الصفحة
@@ -112,8 +110,9 @@ def main(page: ft.Page):
 
 if __name__ == "__main__":
     try:
-        print("🚀 بدء تطبيق USSD...")
-        ft.app(target=main)
+        print("🚀 بدء تطبيق USSD على الأندرويد...")
+        # التعديل الجوهري: تشغيل التطبيق كـ Assets View ليتناسب مع جافا وأندرويد
+        ft.app(target=main, view=ft.AppView.FLET_APP)
     except Exception as e:
         print(f"✗ خطأ في تشغيل التطبيق: {e}")
         traceback.print_exc()
