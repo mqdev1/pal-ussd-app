@@ -24,9 +24,7 @@ def main(page: ft.Page):
                         ],
                         alignment=ft.MainAxisAlignment.CENTER,
                         horizontal_alignment=ft.CrossAxisAlignment.CENTER
-                    ),
-                    alignment=ft.alignment.center,
-                    expand=True
+                    )
                 )
             )
         )
@@ -40,9 +38,7 @@ def main(page: ft.Page):
                         ],
                         alignment=ft.MainAxisAlignment.CENTER,
                         horizontal_alignment=ft.CrossAxisAlignment.CENTER
-                    ),
-                    alignment=ft.alignment.center,
-                    expand=True
+                    )
                 )
             )
         )
