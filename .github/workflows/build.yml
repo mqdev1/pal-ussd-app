@@ -1,8 +1,45 @@
-- name: Install System Dependencies
+name: Build Flet APK with ShoSho Developer
+
+on:
+  pull_request:
+    branches: [ "main" ] # أو اسم الفرع الرئيسي عندك إذا أردت تحديده
+  workflow_dispatch: 
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+jobs:
+  build:
+    name: Build APK with Flet
+    runs-on: ubuntu-latest
+    permissions: 
+      contents: write 
+
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python 3.9
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
+      - name: Set up Java JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+
+      # خطوة مهمة لتثبيت حزم الـ Linux الأساسية التي يحتاجها Flutter أثناء البناء
+      - name: Install System Dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y subversion ninja-build libgtk-3-dev libblkid-dev liblzma-dev libgcrypt20-dev
-          
+          sudo apt-get install -y ninja-build libgtk-3-dev libblkid-dev liblzma-dev libgcrypt20-dev pkg-config
+
       - name: Install Python Dependencies
         run: |
           python -m pip install --upgrade pip
@@ -38,19 +75,62 @@
             target_sdk_version: 34
           EOF
 
-      # خطوة إضافية لضمان تنظيف الكاش قبل البناء
-      - name: Clean Flet/Flutter cache
+      - name: Verify flet.yaml
         run: |
-          flet pack --clean 2>/dev/null || true
+          echo "=== flet.yaml Configuration ==="
+          cat flet.yaml
+
+      # تنظيف أي كاش قديم لضمان بناء نظيف تماماً
+      - name: Clean Build Cache
+        run: |
           flutter clean 2>/dev/null || true
 
       - name: Build APK with verbose output
         run: |
-          # أحياناً الـ yes | تتسبب في تعليق البناء أو كسر الـ CLI، نمرر الإدخال بشكل آمن
           flet build apk -v > build.log 2>&1 || true
-          
-      # فحص هل البناء تم فعلاً أم فشل
-      - name: Verify Build Output
+
+      # رفع ملف السجلات (Logs) في حال فشل البناء لتعرف المشكلة بالتفصيل
+      - name: Upload build logs on failure
+        if: always() # تم تعديلها لـ always لضمان مراجعة الـ log في كل الحالات
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs-${{ github.run_number }}
+          path: build.log
+          retention-days: 7
+
+      # فحص المجلدات التي ينتجها Flet لمعرفة أين تم حفظ الـ APK
+      - name: Check APK build directory
+        if: always()
         run: |
-          echo "=== Tail of Build Log ==="
-          tail -n 50 build.log
+          echo "=== Build Directory Contents ==="
+          ls -la build/ 2>/dev/null || echo "Main build directory not found"
+          find . -type f -name "*.apk" 2>/dev/null || echo "No APK files found anywhere"
+
+      - name: Prepare APK for Upload
+        run: |
+          echo "=== Searching for APK file ==="
+          # البحث في كل المجلدات الفرعية عن أي ملف ينتهي بـ .apk
+          APK_PATH=$(find . -type f -name "*.apk" | head -n 1)
+          
+          if [ -z "$APK_PATH" ]; then
+            echo "❌ Error: APK file not found!"
+            echo "=== Last 100 lines of build.log ==="
+            tail -n 100 build.log
+            exit 1
+          fi
+          
+          echo "✅ Found APK at: $APK_PATH"
+          cp "$APK_PATH" ussd-jawwal.apk
+          ls -lh ussd-jawwal.apk
+          echo "FINAL_APK=ussd-jawwal.apk" >> $GITHUB_ENV
+          echo "✅ APK prepared successfully"
+
+      - name: Create Release and Upload APK
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: Release v1.0.${{ github.run_number }}
+          body: "تطبيق USSD محسّن ✨"
+          files: ${{ env.FINAL_APK }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
