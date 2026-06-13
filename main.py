@@ -11,11 +11,17 @@ def main(page: ft.Page):
     page.theme_mode = ft.ThemeMode.LIGHT
     page.bgcolor = ft.Colors.WHITE
     
+    # ضبط محاذاة الصفحة الأساسية لضمان التوسط التام
+    page.vertical_alignment = ft.MainAxisAlignment.CENTER
+    page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
+    
     try:
-        # واجهة بسيطة جداً بدون أي تعقيد
+        # واجهة بسيطة جداً بدون أي تعقيد مع تأمين أبعاد المحرك
         page.add(
             ft.SafeArea(
+                expand=True,
                 content=ft.Container(
+                    alignment=ft.alignment.center,
                     content=ft.Column(
                         controls=[
                             ft.Icon(ft.Icons.CHECK_CIRCLE, color=ft.Colors.GREEN, size=60),
@@ -28,13 +34,21 @@ def main(page: ft.Page):
                 )
             )
         )
-    except s:
+        page.update()
+        
+    except Exception as e: # التعديل الجوهري هنا
+        # في حال حدوث أي خطأ غريب أثناء الرندرة، يفرغ الصفحة ويعرض الخطأ الحقيقي
+        page.controls.clear()
         page.add(
             ft.SafeArea(
+                expand=True,
                 content=ft.Container(
+                    alignment=ft.alignment.center,
                     content=ft.Column(
                         controls=[
-                            ft.Text("هناك خطاء يرجى مراجعته", size=14, color=ft.Colors.GREY_600),
+                            ft.Icon(ft.Icons.ERROR_OUTLINE, color=ft.Colors.RED, size=60),
+                            ft.Text("هناك خطأ يرجى مراجعته", size=18, color=ft.Colors.RED, weight=ft.FontWeight.BOLD),
+                            ft.Text(f"تفاصيل الخطأ: {str(e)}", size=12, color=ft.Colors.GREY_700) # يطبع لك الخطأ على الشاشة بدقة
                         ],
                         alignment=ft.MainAxisAlignment.CENTER,
                         horizontal_alignment=ft.CrossAxisAlignment.CENTER
@@ -42,6 +56,6 @@ def main(page: ft.Page):
                 )
             )
         )
-    page.update()
+        page.update()
     
-ft.app(target=main)
+ft.app(target=main, assets_dir='assets')
