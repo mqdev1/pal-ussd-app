@@ -1,27 +1,35 @@
 import flet as ft
 import time
+import sys
 
 def main(page: ft.Page):
-    # وقت مستقطع قصير لضمان استقرار المحرك في الخلفية
-    time.sleep(1) 
+    # انتظام قصير لضمان استقرار اتصال فلاتر ببايثون في الخلفية
+    time.sleep(1)
     
-    page.title = "USSD App"
+    # إعدادات الأندرويد الأساسية (بدون تحديد أبعاد النافذة window_width لأنها تسبب انهياراً على الجوال)
+    page.title = "تطبيق USSD"
+    page.rtl = True  # تفعيل الاتجاه العربي
     page.theme_mode = ft.ThemeMode.LIGHT
-    page.rtl = True # للغة العربية
+    page.bgcolor = ft.Colors.WHITE
     
-    # عناصر بسيطة جداً للتأكد من العرض
+    # محتوى مرن وبسيط جداً للتأكد من اشتغال الواجهة
     page.add(
-        ft.Container(
-            content=ft.Column([
-                ft.Text("تطبيق USSD جاهز", size=30, weight="bold"),
-                ft.Icon(ft.Icons.CHECK_CIRCLE, color="green", size=50),
-            ], alignment=ft.MainAxisAlignment.CENTER),
-            alignment=ft.alignment.center,
-            expand=True
+        ft.SafeArea( # تحمي العناصر من الاختفاء تحت شريط الإشعارات أو الكاميرا الأمامية
+            content=ft.Container(
+                content=ft.Column([
+                    ft.Icon(ft.Icons.CHECK_CIRCLE, color=ft.Colors.GREEN, size=60),
+                    ft.Text("تطبيق USSD يعمل بنجاح! 🚀", size=22, weight=ft.FontWeight.BOLD, color=ft.Colors.BLACK),
+                    ft.Text("تم حل مشكلة الشاشة السوداء بنجاح.", size=14, color=ft.Colors.GREY_600),
+                ], 
+                alignment=ft.MainAxisAlignment.CENTER,
+                horizontal_alignment=ft.CrossAxisAlignment.CENTER),
+                alignment=ft.alignment.center,
+                expand=True
+            )
         )
     )
     page.update()
 
 if __name__ == "__main__":
-    # لا تضع أي باراميترات إضافية هنا، اتركها افتراضية للأندرويد
+    # تشغيل التطبيق بالوضع الافتراضي للأندرويد
     ft.app(target=main)
