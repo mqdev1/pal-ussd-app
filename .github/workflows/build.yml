@@ -1,4 +1,4 @@
-name: Build Flet APK
+name: Build Flet APK with ShoSho Developer
 
 on:
   pull_request:
@@ -13,7 +13,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-    
+     
       - name: Set up Python 3.9
         uses: actions/setup-python@v5
         with:
@@ -36,13 +36,24 @@ jobs:
           pip install --upgrade flet
           pip install pyjnius
 
-      - name: Ensure flet.yaml exists
+      - name: Create flet.yaml with proper configuration
         run: |
-          echo "app:" > flet.yaml
-          echo "  path: ." >> flet.yaml
-          echo "android:" >> flet.yaml
-          echo "  permissions:" >> flet.yaml
-          echo "    - android.permission.CALL_PHONE" >> flet.yaml
+          cat > flet.yaml << 'EOF'
+          app:
+            path: .
+            title: "تطبيق USSD"
+          
+          android:
+            package: "com.palpay.ussd"
+            permissions:
+              - android.permission.CALL_PHONE
+              - android.permission.INTERNET
+              - android.permission.ACCESS_NETWORK_STATE
+            min_sdk_version: 21
+          EOF
+
+      - name: Verify flet.yaml
+        run: cat flet.yaml
 
       - name: Build APK
         run: yes | flet build apk -v
@@ -54,7 +65,9 @@ jobs:
             echo "Error: APK file not found!"
             exit 1
           fi
+          echo "Found APK: $APK_PATH"
           cp "$APK_PATH" ussd-jawwal.apk
+          ls -lh ussd-jawwal.apk
           echo "FINAL_APK=ussd-jawwal.apk" >> $GITHUB_ENV
 
       - name: Create Release and Upload APK
@@ -62,7 +75,7 @@ jobs:
         with:
           tag_name: v1.0.${{ github.run_number }}
           name: Release v1.0.${{ github.run_number }}
-          body: "تم إصلاح واجهة الـ CLI وبناء التطبيق بشكل مستقل ومستقر بالكامل."
+          body: "تطبيق USSD محسّن مع معالجة أخطاء وصلاحيات صحيحة"
           files: ${{ env.FINAL_APK }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
