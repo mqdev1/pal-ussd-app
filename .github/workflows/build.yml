@@ -14,10 +14,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
     
-      - name: Set up Python 3.10
+      - name: Set up Python 3.9
         uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: '3.9'
 
       - name: Set up Java JDK 17
         uses: actions/setup-java@v4
@@ -33,9 +33,9 @@ jobs:
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install flet pyjnius
+          pip install --upgrade flet
+          pip install pyjnius
 
-      # إنشاء ملف flet.yaml القياسي لتثبيت الصلاحيات والمسار بشكل سليم
       - name: Ensure flet.yaml exists
         run: |
           echo "app:" > flet.yaml
@@ -44,7 +44,6 @@ jobs:
           echo "  permissions:" >> flet.yaml
           echo "    - android.permission.CALL_PHONE" >> flet.yaml
 
-      # الحل السحري لتجاوز أي أسئلة تفاعلية بدون إدخال أرجومنتس خاطئة
       - name: Build APK
         run: yes | flet build apk -v
 
