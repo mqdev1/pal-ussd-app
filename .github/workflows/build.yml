@@ -1,56 +1,69 @@
-name: Build Flet App (No Black Screen)
+name: Build Flet APK
 
 on:
-  push:
-    branches: [ main ]
-  workflow_dispatch:
+  pull_request:
+  workflow_dispatch: 
 
 jobs:
   build:
+    name: Build APK with Flet
     runs-on: ubuntu-latest
+    permissions: 
+      contents: write 
 
     steps:
-      # 1. جلب الكود
-      - name: Checkout Code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+    
+      - name: Set up Python 3.10
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
 
-      # 2. إعداد الجافا 
-      - name: Set up JDK 17
+      - name: Set up Java JDK 17
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
           java-version: '17'
+          distribution: 'temurin'
 
-      # 3. إعداد Flutter 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.22.2'
           channel: 'stable'
 
-      # 4. إعداد بايثون
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-          cache: 'pip'
-
-      # 5. تثبيت حزمة Flet فقط (هي تتكفل بالباقي داخلياً)
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install flet==0.23.0
+          pip install flet pyjnius
 
-      # 6. بناء التطبيق مع تمرير البيئة الصحيحة
-      - name: Build APK
-        env:
-          CC: gcc  
+      # إنشاء ملف flet.yaml القياسي لتثبيت الصلاحيات والمسار بشكل سليم
+      - name: Ensure flet.yaml exists
         run: |
-          flet build apk --verbose
+          echo "app:" > flet.yaml
+          echo "  path: ." >> flet.yaml
+          echo "android:" >> flet.yaml
+          echo "  permissions:" >> flet.yaml
+          echo "    - android.permission.CALL_PHONE" >> flet.yaml
 
-      # 7. رفع الملف الناتج (APK)
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
+      # الحل السحري لتجاوز أي أسئلة تفاعلية بدون إدخال أرجومنتس خاطئة
+      - name: Build APK
+        run: yes | flet build apk -v
+
+      - name: Prepare APK for Upload
+        run: |
+          APK_PATH=$(find build/apk -name "*.apk" | head -n 1)
+          if [ -z "$APK_PATH" ]; then
+            echo "Error: APK file not found!"
+            exit 1
+          fi
+          cp "$APK_PATH" ussd-jawwal.apk
+          echo "FINAL_APK=ussd-jawwal.apk" >> $GITHUB_ENV
+
+      - name: Create Release and Upload APK
+        uses: softprops/action-gh-release@v2
         with:
-          name: USSD-App-Release
-          path: build/apk/*.apk
+          tag_name: v1.0.${{ github.run_number }}
+          name: Release v1.0.${{ github.run_number }}
+          body: "المطور محمود قاسم <3"
+          files: ${{ env.FINAL_APK }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
