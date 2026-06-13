@@ -35,19 +35,18 @@ jobs:
         with:
           channel: 'stable'
 
-      # تثبيت الأدوات والمجمعات الأساسية لنظام Linux لضمان نجاح بناء الأدوات الملحقة مثل pyjnius
       - name: Install Linux System Dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y gcc g++ make ninja-build libgtk-3-dev libblkid-dev liblzma-dev libgcrypt20-dev pkg-config
 
+      # نثبت الحزم الأساسية للسيرفر فقط، بدون pyjnius و buildozer هنا لتفادي تعارض البيئات
       - name: Install Python Dependencies
         run: |
           python -m pip install --upgrade pip
           pip install --upgrade flet==0.23.0
-          pip install pyjnius>=1.5.0
-          pip install buildozer>=1.4.0
 
+      # هنا نقوم بوضع الحزم المطلوبة للأندرويد داخل flet.yaml لتتولى أداة البناء جلب النسخ المتوافقة تلقائياً
       - name: Create flet.yaml Configuration
         run: |
           cat > flet.yaml << 'EOF'
@@ -63,24 +62,25 @@ jobs:
               - android.permission.ACCESS_NETWORK_STATE
             min_sdk_version: 21
             target_sdk_version: 34
+            requirements:
+              - flet-embed==0.23.0
+              - pyjnius
           EOF
 
       - name: Clean Build Cache
         run: |
           flutter clean 2>/dev/null || true
 
-      # خطوة البناء المعدلة: نقوم بحقن البيئة البرمجية للمجمّع هنا لمنع تعليق خطوة الـ Wheel لـ pyjnius
       - name: Build APK
         run: |
-          export CC=gcc
-          export CXX=g++
+          # تأمين مسارات الجافا للنظام
           export JNI_HOME="$JAVA_HOME"
           export JAVA_HOME="$JAVA_HOME"
           export PATH="$JAVA_HOME/bin:$PATH"
           
-          flet build apk -v > build.log 2>&1 || true
+          # تشغيل البناء وتمرير الـ الإدخال التلقائي الصامت
+          echo "y" | flet build apk -v > build.log 2>&1 || true
 
-      # رفع السجلات في كل الأحوال لمتابعة سير العملية
       - name: Upload Build Logs
         if: always()
         uses: actions/upload-artifact@v4
@@ -89,7 +89,6 @@ jobs:
           path: build.log
           retention-days: 5
 
-      # البحث الذكي عن الـ APK المخرج ونسخه وتسميته
       - name: Prepare APK Artifact
         id: prepare_apk
         run: |
@@ -115,8 +114,7 @@ jobs:
           name: Release v1.0.${{ github.run_number }}
           body: |
             ### تحديث جديد للتطبيق 🚀
-            - تم بناء حزمة الـ APK تلقائياً عبر GitHub Actions بنجاح.
-            - الصلاحيات المضمنة: الاتصال، الإنترنت، وحالة الشبكة.
+            - تم حل مشكلة الـ Compilation لـ pyjnius وبناء الـ APK عبر الريسبي الداخلي للأندرويد.
           files: ${{ env.FINAL_APK }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
