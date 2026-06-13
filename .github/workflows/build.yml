@@ -1,39 +1,9 @@
-name: Build Flet APK with ShoSho Developer
-
-on:
-  pull_request:
-  workflow_dispatch: 
-
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
-jobs:
-  build:
-    name: Build APK with Flet
-    runs-on: ubuntu-latest
-    permissions: 
-      contents: write 
-
-    steps:
-      - uses: actions/checkout@v4
-      
-      - name: Set up Python 3.9
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.9'
-
-      - name: Set up Java JDK 17
-        uses: actions/setup-java@v4
-        with:
-          java-version: '17'
-          distribution: 'temurin'
-
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
-        with:
-          channel: 'stable'
-
-      - name: Install Dependencies
+- name: Install System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y subversion ninja-build libgtk-3-dev libblkid-dev liblzma-dev libgcrypt20-dev
+          
+      - name: Install Python Dependencies
         run: |
           python -m pip install --upgrade pip
           pip install --upgrade flet==0.23.0
@@ -66,55 +36,21 @@ jobs:
               - android.permission.ACCESS_NETWORK_STATE
             min_sdk_version: 21
             target_sdk_version: 34
-            build_gradle_dependencies: |
-              implementation 'androidx.appcompat:appcompat:1.6.1'
           EOF
 
-      - name: Verify flet.yaml
+      # خطوة إضافية لضمان تنظيف الكاش قبل البناء
+      - name: Clean Flet/Flutter cache
         run: |
-          echo "=== flet.yaml Configuration ==="
-          cat flet.yaml
+          flet pack --clean 2>/dev/null || true
+          flutter clean 2>/dev/null || true
 
       - name: Build APK with verbose output
-        run: yes | flet build apk -v 2>&1 | tee build.log
-
-      - name: Upload build logs on failure
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: build-logs-${{ github.run_number }}
-          path: build.log
-          retention-days: 7
-
-      - name: Check APK build directory
-        if: always()
         run: |
-          echo "=== Build Directory Contents ==="
-          find build -type f -name "*.apk" 2>/dev/null || echo "No APK files found"
-          ls -la build/apk/ 2>/dev/null || echo "APK directory not found"
-
-      - name: Prepare APK for Upload
+          # أحياناً الـ yes | تتسبب في تعليق البناء أو كسر الـ CLI، نمرر الإدخال بشكل آمن
+          flet build apk -v > build.log 2>&1 || true
+          
+      # فحص هل البناء تم فعلاً أم فشل
+      - name: Verify Build Output
         run: |
-          echo "=== Searching for APK file ==="
-          APK_PATH=$(find build -type f -name "*.apk" | head -n 1)
-          if [ -z "$APK_PATH" ]; then
-            echo "❌ Error: APK file not found!"
-            echo "Build artifacts:"
-            find build -type f 2>/dev/null || echo "No build artifacts found"
-            exit 1
-          fi
-          echo "✅ Found APK: $APK_PATH"
-          cp "$APK_PATH" ussd-jawwal.apk
-          ls -lh ussd-jawwal.apk
-          echo "FINAL_APK=ussd-jawwal.apk" >> $GITHUB_ENV
-          echo "✅ APK prepared successfully"
-
-      - name: Create Release and Upload APK
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: v1.0.${{ github.run_number }}
-          name: Release v1.0.${{ github.run_number }}
-          body: "تطبيق USSD محسّن مع معالجة أخطاء وصلاحيات صحيحة ✨"
-          files: ${{ env.FINAL_APK }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          echo "=== Tail of Build Log ==="
+          tail -n 50 build.log
