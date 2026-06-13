@@ -16,7 +16,7 @@ def main(page: ft.Page):
     page.add(
         ft.SafeArea( # تحمي العناصر من الاختفاء تحت شريط الإشعارات أو الكاميرا الأمامية
             content=ft.Container(
-                content=ft.Column([
+                content=ft.Column(controls=[
                     ft.Icon(ft.Icons.CHECK_CIRCLE, color=ft.Colors.GREEN, size=60),
                     ft.Text("تطبيق USSD يعمل بنجاح! 🚀", size=22, weight=ft.FontWeight.BOLD, color=ft.Colors.BLACK),
                     ft.Text("تم حل مشكلة الشاشة السوداء بنجاح.", size=14, color=ft.Colors.GREY_600),
