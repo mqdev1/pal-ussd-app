@@ -45,7 +45,7 @@ jobs:
           echo "=== Python Version ==="
           python --version
           echo "=== Flet Version ==="
-          python -c "import flet; print(f'Flet: {flet.__version__}')"
+          python -c "import pkg_resources; print(f'Flet: {pkg_resources.get_distribution(\"flet\").version}')"
           echo "=== Java Version ==="
           java -version
           echo "=== Flutter Version ==="
