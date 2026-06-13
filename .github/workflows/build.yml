@@ -33,8 +33,20 @@ jobs:
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install --upgrade flet
-          pip install pyjnius
+          pip install --upgrade flet==0.23.0
+          pip install pyjnius>=1.5.0
+          pip install buildozer>=1.4.0
+
+      - name: Verify installations
+        run: |
+          echo "=== Python Version ==="
+          python --version
+          echo "=== Flet Version ==="
+          python -c "import flet; print(f'Flet: {flet.__version__}')"
+          echo "=== Java Version ==="
+          java -version
+          echo "=== Flutter Version ==="
+          flutter --version
 
       - name: Create flet.yaml with proper configuration
         run: |
@@ -50,32 +62,56 @@ jobs:
               - android.permission.INTERNET
               - android.permission.ACCESS_NETWORK_STATE
             min_sdk_version: 21
+            target_sdk_version: 34
+            build_gradle_dependencies: |
+              implementation 'androidx.appcompat:appcompat:1.6.1'
           EOF
 
       - name: Verify flet.yaml
-        run: cat flet.yaml
+        run: |
+          echo "=== flet.yaml Configuration ==="
+          cat flet.yaml
 
-      - name: Build APK
-        run: yes | flet build apk -v
+      - name: Build APK with verbose output
+        run: yes | flet build apk -v 2>&1 | tee build.log
+
+      - name: Upload build logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs-${{ github.run_number }}
+          path: build.log
+          retention-days: 7
+
+      - name: Check APK build directory
+        if: always()
+        run: |
+          echo "=== Build Directory Contents ==="
+          find build -type f -name "*.apk" 2>/dev/null || echo "No APK files found"
+          ls -la build/apk/ 2>/dev/null || echo "APK directory not found"
 
       - name: Prepare APK for Upload
         run: |
-          APK_PATH=$(find build/apk -name "*.apk" | head -n 1)
+          echo "=== Searching for APK file ==="
+          APK_PATH=$(find build -type f -name "*.apk" | head -n 1)
           if [ -z "$APK_PATH" ]; then
-            echo "Error: APK file not found!"
+            echo "❌ Error: APK file not found!"
+            echo "Build artifacts:"
+            find build -type f 2>/dev/null || echo "No build artifacts found"
             exit 1
           fi
-          echo "Found APK: $APK_PATH"
+          echo "✅ Found APK: $APK_PATH"
           cp "$APK_PATH" ussd-jawwal.apk
           ls -lh ussd-jawwal.apk
           echo "FINAL_APK=ussd-jawwal.apk" >> $GITHUB_ENV
+          echo "✅ APK prepared successfully"
 
       - name: Create Release and Upload APK
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v1.0.${{ github.run_number }}
           name: Release v1.0.${{ github.run_number }}
-          body: "تطبيق USSD محسّن مع معالجة أخطاء وصلاحيات صحيحة"
+          body: "تطبيق USSD محسّن مع معالجة أخطاء وصلاحيات صحيحة ✨"
           files: ${{ env.FINAL_APK }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
