@@ -1,60 +1,49 @@
 import flet as ft
-import time
 
 def main(page: ft.Page):
-    # نمنح المحرك ثانية واحدة للاستقرار داخل نظام أندرويد
-    time.sleep(1)
-    
-    # إعدادات أساسية متوافقة 100% مع الجوال
+    # 1. إعدادات الصفحة الأساسية (تُنفذ فوراً بدون تأخير)
     page.title = "فحص الاتصال"
+    page.rtl = True
     page.theme_mode = ft.ThemeMode.LIGHT
+    page.bgcolor = ft.Colors.WHITE
     
-    # ضبط محاذاة الصفحة الأساسية لضمان التوسط التام
+    # ضبط المحاذاة لتوسيط المحتوى تماماً
     page.vertical_alignment = ft.MainAxisAlignment.CENTER
     page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
     
+    # 2. تحديث أولي لإرسال الإشارات للمحرك ومنع التجمد
+    page.update()
+    
     try:
-        # واجهة بسيطة جداً بدون أي تعقيد مع تأمين أبعاد المحرك
-        page.controls.clear()
+        # 3. بناء الواجهة بشكل آمن وصحيح للموبايل
         page.add(
             ft.SafeArea(
-                expand=True,
+                expand=True, # الآن آمن لأن الصفحة تم تحديثها واستقرت أبعادها
                 content=ft.Container(
                     alignment=ft.alignment.center,
                     content=ft.Column(
                         controls=[
                             ft.Icon(ft.Icons.CHECK_CIRCLE, color=ft.Colors.GREEN, size=60),
                             ft.Text("مرحباً محمود! التطبيق يعمل 🎉", size=22, weight=ft.FontWeight.BOLD, color=ft.Colors.BLACK),
-                            ft.Text("إذا رأيت هذه الشاشة، فالبيئة سليمة 100%", size=14, color=ft.Colors.GREY_600),
+                            ft.Text("البيئة الآن مستقرة وسليمة 100%", size=14, color=ft.Colors.GREY_600),
                         ],
                         alignment=ft.MainAxisAlignment.CENTER,
-                        horizontal_alignment=ft.CrossAxisAlignment.CENTER
+                        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                        tight=True # يمنع العمود من التمدد اللانهائي داخل الـ Container
                     )
                 )
             )
         )
+        # تحديث نهائي لإظهار العناصر
         page.update()
         
-    except Exception as e: # التعديل الجوهري هنا
-        # في حال حدوث أي خطأ غريب أثناء الرندرة، يفرغ الصفحة ويعرض الخطأ الحقيقي
+    except Exception as e:
+        # في حال حدوث أي خطأ في الرندرة، يعرضه فوراً
         page.controls.clear()
         page.add(
-            ft.SafeArea(
-                expand=True,
-                content=ft.Container(
-                    alignment=ft.alignment.center,
-                    content=ft.Column(
-                        controls=[
-                            ft.Icon(ft.Icons.ERROR_OUTLINE, color=ft.Colors.RED, size=60),
-                            ft.Text("هناك خطأ يرجى مراجعته", size=18, color=ft.Colors.RED, weight=ft.FontWeight.BOLD),
-                            ft.Text(f"تفاصيل الخطأ: {str(e)}", size=12, color=ft.Colors.GREY_700) # يطبع لك الخطأ على الشاشة بدقة
-                        ],
-                        alignment=ft.MainAxisAlignment.CENTER,
-                        horizontal_alignment=ft.CrossAxisAlignment.CENTER
-                    )
-                )
-            )
+            ft.Text(f"حدث خطأ غير متوقع: {str(e)}", color=ft.Colors.RED_700, size=16)
         )
         page.update()
-    
-ft.app(target=main, assets_dir='assets')
+
+# تشغيل التطبيق (تأكد من وجود مجلد assets لو قمت بتفعيله لاحقاً)
+ft.app(target=main)
