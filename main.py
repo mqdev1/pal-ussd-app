@@ -27,7 +27,6 @@ def main(page: ft.Page):
                             ft.Text("مرحباً محمود! التطبيق يعمل 🎉", size=22, weight=ft.FontWeight.BOLD, color=ft.Colors.BLACK),
                             ft.Text("البيئة الآن مستقرة وسليمة 100%", size=14, color=ft.Colors.GREY_600),
                         ],
-                        alignment=ft.MainAxisAlignment.CENTER,
                         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                         tight=True # يمنع العمود من التمدد اللانهائي داخل الـ Container
                     )
