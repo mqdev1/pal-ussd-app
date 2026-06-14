@@ -20,7 +20,7 @@ def main(page: ft.Page):
             ft.SafeArea(
                 expand=True, # الآن آمن لأن الصفحة تم تحديثها واستقرت أبعادها
                 content=ft.Container(
-                    alignment=ft.alignment.center,
+                    alignment=ft.alignment.CENTER,
                     content=ft.Column(
                         controls=[
                             ft.Icon(ft.Icons.CHECK_CIRCLE, color=ft.Colors.GREEN, size=60),
