@@ -15,12 +15,20 @@ jobs:
     - name: Checkout Code
       uses: actions/checkout@v4
 
-    # 2. إنشاء ملف تجريبي للرفع (قم بتعطيل أو استبدال هذه الخطوة بملف الـ APK الفعلي الخاص بك)
+    # 2. فحص أماني للتأكد من وجود الـ Secret قبل المتابعة لمنع الأخطاء المبهمة
+    - name: Check Secret Presence
+      run: |
+        if [ -z "${{ secrets.DROPBOX_ACCESS_TOKEN }}" ]; then
+          echo "::error::الرمز السري DROPBOX_ACCESS_TOKEN غير موجود في إعدادات جيت هاب! يرجى إضافته في Repository Secrets."
+          exit 1
+        fi
+
+    # 3. إنشاء ملف تجريبي للرفع (قم بتعطيل أو استبدال هذه الخطوة بملف الـ APK الفعلي الخاص بك)
     - name: Create Dummy File for Testing
       run: |
         echo "هذا ملف تجريبي تم توليده تلقائياً من GitHub Actions" > build_output.txt
 
-    # 3. رفع الملف إلى Dropbox باستخدام أداة curl بالرابط الصحيح والنظيف تماماً
+    # 4. رفع الملف إلى Dropbox باستخدام أداة curl بالرابط الصحيح والنظيف تماماً
     - name: Upload File to Dropbox
       env:
         DBX_TOKEN: ${{ secrets.DROPBOX_ACCESS_TOKEN }}
