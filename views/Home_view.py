@@ -1,18 +1,20 @@
 import flet as ft
+from jnius import autoclass
 
-def Home_view(page: ft.Page):
-
-    CURRENT_SERVICE = None       
-    CURRENT_STEP = 0             
-    RECIPIENT = ""               
-    AMOUNT = ""                  
-    PIN = ""                     
-    PALPAY_ACCEPT_OPTION = "1"   
+def Home_view(page: ft.Page) -> ft.View:
+    # --- قاموس لإدارة حالة خطوات الـ USSD دون الحاجة لكلاس ---
+    state = {
+        "CURRENT_SERVICE": None,       # نوع الخدمة: "BOP" أو "PALPAY" أو "JAWWAL"
+        "CURRENT_STEP": 0,             # الخطوة الحالية في الـ State Machine
+        "RECIPIENT": "",               # رقم حساب أو هاتف المستلم
+        "AMOUNT": "",                  # المبلغ
+        "PIN": "",                     # الرقم السري
+        "PALPAY_ACCEPT_OPTION": "1"    # خيار التأكيد لـ PalPay (1 أو 2)
+    }
 
     def dial_ussd(code: str):
+        # تأجيل الاستيراد لمنع انهيار التطبيق عند تشغيله على الكمبيوتر أثناء التطوير
         try:
-            from jnius import autoclass 
-            
             Intent = autoclass('android.content.Intent')
             Uri = autoclass('android.net.Uri')
             PythonActivity = autoclass('org.kivy.android.PythonActivity')
@@ -24,36 +26,40 @@ def Home_view(page: ft.Page):
             activity.startActivity(intent)
         except Exception as ex:
             print(f"Native Android Call Error: {ex}")
-            Alert("خطأ في النظام", "لا يمكن تشغيل ميزة الاتصال خارج بيئة أندرويد.")
+            # تنبيه مخصص بديل لـ Alert لمنع مشاكل تعليق الواجهات
+            Alert("تنبيه المحاكي", "أنت تعمل الآن خارج بيئة أندرويد. تم توليد كود الـ USSD بنجاح:\n" + code)
 
     def trigger_palpay(e):
-        nonlocal CURRENT_SERVICE, CURRENT_STEP, PIN, PALPAY_ACCEPT_OPTION
-        CURRENT_SERVICE = "PALPAY"
-        CURRENT_STEP = 1
-        PIN = pin_input.value
-        PALPAY_ACCEPT_OPTION = "1" 
+        state["CURRENT_SERVICE"] = "PALPAY"
+        state["CURRENT_STEP"] = 1
+        state["PIN"] = pin_input.value
+        state["PALPAY_ACCEPT_OPTION"] = "1"
         
         direct_string = f"*370*1*1*{phoneInput.value}*{amountInput.value}#"
         dial_ussd(direct_string)
 
     def trigger_bop(e):
-        nonlocal CURRENT_SERVICE, CURRENT_STEP, RECIPIENT, AMOUNT, PIN
-        CURRENT_SERVICE = "BOP"
-        CURRENT_STEP = 1
-        RECIPIENT, AMOUNT, PIN = phoneInput.value, amountInput.value, pin_input.value
+        state["CURRENT_SERVICE"] = "BOP"
+        state["CURRENT_STEP"] = 1
+        state["RECIPIENT"] = phoneInput.value
+        state["AMOUNT"] = amountInput.value
+        state["PIN"] = pin_input.value
         dial_ussd("*267#")
 
     def trigger_jawwal(e):
-        nonlocal CURRENT_SERVICE, CURRENT_STEP, RECIPIENT, AMOUNT, PIN
-        CURRENT_SERVICE = "JAWWAL"
-        CURRENT_STEP = 1
-        RECIPIENT, AMOUNT, PIN = phoneInput.value, amountInput.value, pin_input.value
+        state["CURRENT_SERVICE"] = "JAWWAL"
+        state["CURRENT_STEP"] = 1
+        state["RECIPIENT"] = phoneInput.value
+        state["AMOUNT"] = amountInput.value
+        state["PIN"] = pin_input.value
         dial_ussd("*110#")
 
+    # رسائل الخطأ تحت الحقول
     phoneMessage = ft.Text("", color=ft.Colors.RED, size=14, visible=False, text_align=ft.TextAlign.RIGHT)
     amountMessage = ft.Text("", color=ft.Colors.RED, size=14, visible=False, text_align=ft.TextAlign.RIGHT)
     pinMessage = ft.Text("", color=ft.Colors.RED, size=14, visible=False, text_align=ft.TextAlign.RIGHT)
 
+    # زر الإرسال
     BtnSendMoney = ft.ElevatedButton(
         content=ft.Container(
             padding=16,
@@ -62,7 +68,7 @@ def Home_view(page: ft.Page):
         disabled=True,
         bgcolor=ft.Colors.GREEN_600,
         color=ft.Colors.WHITE,
-        on_click=trigger_jawwal 
+        on_click=trigger_jawwal
     )
 
     def Alert(title, text):
@@ -80,37 +86,42 @@ def Home_view(page: ft.Page):
         page.open(al)
 
     def validateInputs():
-        if phoneInput.value == '' or len(phoneInput.value) != 8:
+        # التحقق من رقم الهاتف
+        if not phoneInput.value or len(phoneInput.value) != 8:
             phoneMessage.value = "يرجى ادخال رقم الهاتف المكون من 8 أرقام"
             phoneMessage.visible = True
             BtnSendMoney.disabled = True
 
-        elif str(phoneInput.value)[0:1] != '9' and str(phoneInput.value)[0:1] != '6':
-            phoneMessage.value = "يجب ان يبداء رقم الهاتف بالرقم 9 او 6"
+        elif not phoneInput.value.startswith(('9', '6')):
+            phoneMessage.value = "يجب ان يبدأ رقم الهاتف بالرقم 9 او 6"
             phoneMessage.visible = True
             BtnSendMoney.disabled = True
         
-        elif amountInput.value == '' or amountInput.value == '0':
+        # التحقق من المبلغ
+        elif not amountInput.value or amountInput.value == '0':
+            phoneMessage.visible = False
             amountMessage.value = "يرجى ادخال المبلغ"
             amountMessage.visible = True
             BtnSendMoney.disabled = True
 
-        elif pin_input.value == '':
+        # التحقق من الرقم السري
+        elif not pin_input.value:
+            phoneMessage.visible = False
+            amountMessage.visible = False
             pinMessage.value = 'ادخل الرقم السري'
             pinMessage.visible = True
             BtnSendMoney.disabled = True
 
         else:
-            phoneMessage.value = ''
+            # تصفير كل رسائل الخطأ وتفعيل الزر
             phoneMessage.visible = False
-            amountMessage.value = ''
             amountMessage.visible = False
-            pinMessage.value = ''
             pinMessage.visible = False
             BtnSendMoney.disabled = False
         
         page.update()
 
+    # الحاوية العلوية (البانر)
     bannerContainer = ft.Container(
         bgcolor=ft.Colors.GREEN_500,
         rtl=True,
@@ -118,12 +129,13 @@ def Home_view(page: ft.Page):
         content=ft.Column(
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             controls=[
-                ft.Text("جوال باي", size=30, color=ft.Colors.WHITE),
+                ft.Text("جوال باي", size=30, color=ft.Colors.WHITE, weight=ft.FontWeight.BOLD),
                 ft.Text("اهلا بك في خدمة USSD التابعة لجوال باي يمكنك تحديد رقم الجوال والمبلغ", size=15, color=ft.Colors.WHITE, text_align=ft.TextAlign.CENTER)
             ]
         )
     )
 
+    # الحقول المدخلة مع تحديد لوحة المفاتيح الرقمية للأرقام والمبالغ
     phoneInput = ft.TextField(
         keyboard_type=ft.KeyboardType.PHONE, 
         hover_color=ft.Colors.TRANSPARENT, 
@@ -133,12 +145,13 @@ def Home_view(page: ft.Page):
         text_align=ft.TextAlign.LEFT, 
         border_color=ft.Colors.TRANSPARENT, 
         text_style=ft.TextStyle(size=20), 
-        autofocus=False, # تم إيقافها هنا لإنهاء الشاشة البيضاء وحظر النظام
+        autofocus=True,
         expand=1,
         on_change=lambda _: validateInputs()
     )
 
     amountInput = ft.TextField(
+        keyboard_type=ft.KeyboardType.NUMBER,
         hover_color=ft.Colors.TRANSPARENT, 
         bgcolor=ft.Colors.TRANSPARENT,
         color=ft.Colors.BLACK,
@@ -151,6 +164,9 @@ def Home_view(page: ft.Page):
     )
 
     pin_input = ft.TextField(
+        keyboard_type=ft.KeyboardType.NUMBER,
+        password=True,
+        can_reveal_password=True,
         hover_color=ft.Colors.TRANSPARENT, 
         bgcolor=ft.Colors.TRANSPARENT,
         color=ft.Colors.BLACK,
@@ -162,12 +178,13 @@ def Home_view(page: ft.Page):
         on_change=lambda _: validateInputs()
     )
 
+    # حاوية عناصر التحكم
     controlsContainer = ft.Container(
         padding=ft.padding.only(50, 20, 50, 20),
         content=ft.Column(
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             controls=[
-                ft.Text("رقم الجوال", size=15, color=ft.Colors.BLACK),
+                ft.Text("رقم الجوال", size=15, color=ft.Colors.BLACK, weight=ft.FontWeight.W_500),
                 ft.Column(
                     spacing=3,
                     horizontal_alignment=ft.CrossAxisAlignment.END,
@@ -189,7 +206,7 @@ def Home_view(page: ft.Page):
                     ]
                 ),
                 ft.Container(padding=ft.padding.only(0, 10, 0, 10)),
-                ft.Text("المبلغ", size=15, color=ft.Colors.BLACK),
+                ft.Text("المبلغ", size=15, color=ft.Colors.BLACK, weight=ft.FontWeight.W_500),
                 ft.Column(
                     spacing=3,
                     horizontal_alignment=ft.CrossAxisAlignment.CENTER,
@@ -202,7 +219,7 @@ def Home_view(page: ft.Page):
                                 spacing=0,
                                 controls=[
                                     amountInput,
-                                    ft.Text("شيكل", size=16)
+                                    ft.Text("شيكل", size=16, color=ft.Colors.BLACK)
                                 ]
                             )
                         ),
@@ -210,7 +227,7 @@ def Home_view(page: ft.Page):
                     ]
                 ),
                 ft.Container(padding=ft.padding.only(0, 10, 0, 10)),
-                ft.Text("الرقم السري", size=15, color=ft.Colors.BLACK),
+                ft.Text("الرقم السري", size=15, color=ft.Colors.BLACK, weight=ft.FontWeight.W_500),
                 ft.Column(
                     spacing=3,
                     horizontal_alignment=ft.CrossAxisAlignment.CENTER,
@@ -230,7 +247,7 @@ def Home_view(page: ft.Page):
                         pinMessage
                     ]
                 ),
-                ft.Container(padding=ft.padding.only(0, 10, 0, 10)),
+                ft.Container(padding=ft.padding.only(0, 15, 0, 15)),
                 ft.Column(
                     horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
                     controls=[
@@ -240,14 +257,16 @@ def Home_view(page: ft.Page):
             ]
         )
     )
-
+    
+    # إرجاع كائن الـ View بشكل مباشر بدلاً من استخدام الوراثة في الكلاس
     return ft.View(
-        route=page.route,
+        route="/",
         padding=0,
         bgcolor='#f0f0f0',
-        horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
         controls=[
             bannerContainer,
             controlsContainer
-        ]
+        ],
+        vertical_alignment=ft.MainAxisAlignment.CENTER,
+        horizontal_alignment=ft.CrossAxisAlignment.STRETCH
     )
