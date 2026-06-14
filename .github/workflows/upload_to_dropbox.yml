@@ -1,31 +1,31 @@
 name: Upload Backup to Dropbox
 
+# تحديد الأحداث التي تطلق هذا المسار
 on:
   push:
-    branches: [ "main" ] # سيعمل الكود تلقائياً عند الدفع لفرع main
-  workflow_dispatch: # يتيح لك تشغيله يدوياً من VS Code أو موقع جيت هاب
+    branches: [ "main" ] # سيعمل تلقائياً عند دفع الكود لفرع main
+  workflow_dispatch: # يتيح لك تشغيل المسار يدوياً من واجهة GitHub أو VS Code
 
 jobs:
   upload:
     runs-on: ubuntu-latest
 
     steps:
+    # 1. جلب ملفات المشروع من المستودع
     - name: Checkout Code
       uses: actions/checkout@v4
 
-    # 1. هنا نضع خطوة تجريبية لإنشاء ملف وهمي للرفع (استبدلها بملف تطبيقك الحقيقي)
+    # 2. إنشاء ملف تجريبي للرفع (قم بتعطيل أو استبدال هذه الخطوة بملف الـ APK الفعلي الخاص بك)
     - name: Create Dummy File for Testing
       run: |
         echo "هذا ملف تجريبي تم توليده تلقائياً من GitHub Actions" > build_output.txt
 
-    # 2. خطوة رفع الملف إلى Dropbox باستخدام سكريبت Bash بسيط وموثوق عبر curl
+    # 3. رفع الملف إلى Dropbox باستخدام أداة curl بالرابط الصحيح والنظيف تماماً
     - name: Upload File to Dropbox
       env:
         DBX_TOKEN: ${{ secrets.DROPBOX_ACCESS_TOKEN }}
       run: |
-        # نستخدم أداة curl لإرسال الملف مباشرة إلى سيرفرات Dropbox API
-        # سيتم حفظ الملف في Dropbox داخل المجلد الرئيسي للتطبيق باسم "github_backup.txt"
-        curl -X POST [https://content.dropboxapi.com/2/files/upload](https://content.dropboxapi.com/2/files/upload) \
+        curl -X POST https://content.dropboxapi.com/2/files/upload \
           --header "Authorization: Bearer $DBX_TOKEN" \
           --header "Dropbox-API-Arg: {\"path\": \"/github_backup.txt\",\"mode\": \"overwrite\",\"autorename\": true,\"mute\": false,\"strict_conflict\": false}" \
           --header "Content-Type: application/octet-stream" \
