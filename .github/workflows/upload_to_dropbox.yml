@@ -1,21 +1,21 @@
-name: Upload Backup to Dropbox
+name: Build Flet APK and Upload to Dropbox
 
-# تحديد الأحداث التي تطلق هذا المسار
+# تحديد الأحداث التي تطلق هذا المسار تلقائياً
 on:
   push:
-    branches: [ "main" ] # سيعمل تلقائياً عند دفع الكود لفرع main
-  workflow_dispatch: # يتيح لك تشغيل المسار يدوياً من واجهة GitHub أو VS Code
+    branches: [ "main" ] # سيعمل تلقائياً عند عمل Push لفرع main
+  workflow_dispatch: # يتيح لك تشغيل المسار يدوياً بضغطة زر من VS Code أو موقع GitHub
 
 jobs:
-  upload:
+  build-and-upload:
     runs-on: ubuntu-latest
 
     steps:
-    # 1. جلب ملفات المشروع من المستودع
+    # 1. جلب كود المشروع من المستودع (Repository)
     - name: Checkout Code
       uses: actions/checkout@v4
 
-    # 2. فحص أماني للتأكد من وجود الـ Secret قبل المتابعة لمنع الأخطاء المبهمة
+    # 2. خطوة أمان للتأكد من وجود الـ Secret الخاص بـ Dropbox لتفادي فشل الرفع الصامت
     - name: Check Secret Presence
       run: |
         if [ -z "${{ secrets.DROPBOX_ACCESS_TOKEN }}" ]; then
@@ -23,18 +23,49 @@ jobs:
           exit 1
         fi
 
-    # 3. إنشاء ملف تجريبي للرفع (قم بتعطيل أو استبدال هذه الخطوة بملف الـ APK الفعلي الخاص بك)
-    - name: Create Dummy File for Testing
-      run: |
-        echo "هذا ملف تجريبي تم توليده تلقائياً من GitHub Actions" > build_output.txt
+    # 3. إعداد لغة بايثون (Python) داخل السيرفر الافتراضي
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.10'
 
-    # 4. رفع الملف إلى Dropbox باستخدام أداة curl بالرابط الصحيح والنظيف تماماً
-    - name: Upload File to Dropbox
+    # 4. تثبيت مكتبة Flet وترقية أداة pip لإدارة الحزم
+    - name: Install Python Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install flet
+        # إذا كان تطبيقك يعتمد على مكتبات خارجية أخرى (مثل requests أو sqlfluff)،
+        # يمكنك تفعيل السطر التالي بعد إنشاء ملف requirements.txt:
+        # pip install -r requirements.txt
+
+    # 5. تثبيت جافا (Java JDK 17) المطلوبة والأساسية لبناء حزم الأندرويد
+    - name: Set up JDK 17
+      uses: actions/setup-java@v4
+      with:
+        java-version: '17'
+        distribution: 'temurin'
+
+    # 6. تثبيت محرك فلاتر (Flutter) لأن Flet يعتمد عليه كلياً في رندرة الواجهات والبناء للشرائح المختلفة
+    - name: Set up Flutter
+      uses: subosito/flutter-action@v2
+      with:
+        flutter-version: '3.19.x' # نسخة مستقرة وممتازة للتوافق مع Flet
+        channel: 'stable'
+
+    # 7. تشغيل أمر بناء ملف الـ APK الفعلي الخاص بالتطبيق وتسمية المخرج
+    - name: Build Android APK
+      run: |
+        # سيقوم الأمر بإنشاء ملف التطبيق مباشرة في المجلد الرئيسي باسم ussd_pal_app.apk
+        flet build apk --output ussd_pal_app.apk
+
+    # 8. الرفع التلقائي المباشر لملف الـ APK الناتج إلى حسابك في Dropbox
+    - name: Upload APK to Dropbox
       env:
         DBX_TOKEN: ${{ secrets.DROPBOX_ACCESS_TOKEN }}
       run: |
+        # أداة curl ترسل ملف الـ APK الصافي مباشرة إلى سيرفرات Dropbox API بدون أقواس تسبب مشاكل في التفسير
         curl -X POST https://content.dropboxapi.com/2/files/upload \
           --header "Authorization: Bearer $DBX_TOKEN" \
-          --header "Dropbox-API-Arg: {\"path\": \"/github_backup.txt\",\"mode\": \"overwrite\",\"autorename\": true,\"mute\": false,\"strict_conflict\": false}" \
+          --header "Dropbox-API-Arg: {\"path\": \"/ussd_pal_app.apk\",\"mode\": \"overwrite\",\"autorename\": true,\"mute\": false,\"strict_conflict\": false}" \
           --header "Content-Type: application/octet-stream" \
-          --data-binary @build_output.txt
+          --data-binary @ussd_pal_app.apk
