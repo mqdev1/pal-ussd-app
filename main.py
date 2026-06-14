@@ -7,9 +7,7 @@ def main(page: ft.Page):
     
     # إعدادات أساسية متوافقة 100% مع الجوال
     page.title = "فحص الاتصال"
-    page.rtl = True
     page.theme_mode = ft.ThemeMode.LIGHT
-    page.bgcolor = ft.Colors.WHITE
     
     # ضبط محاذاة الصفحة الأساسية لضمان التوسط التام
     page.vertical_alignment = ft.MainAxisAlignment.CENTER
@@ -17,6 +15,7 @@ def main(page: ft.Page):
     
     try:
         # واجهة بسيطة جداً بدون أي تعقيد مع تأمين أبعاد المحرك
+        page.controls.clear()
         page.add(
             ft.SafeArea(
                 expand=True,
