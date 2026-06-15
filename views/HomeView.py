@@ -1,6 +1,4 @@
 import flet as ft
-from jnius import autoclass
-
 def HomeView(page: ft.Page):
     # --- قاموس لإدارة حالة خطوات الـ USSD دون الحاجة لكلاس ---
     state = {
@@ -15,13 +13,14 @@ def HomeView(page: ft.Page):
     def dial_ussd(code: str):
         # تأجيل الاستيراد لمنع انهيار التطبيق عند تشغيله على الكمبيوتر أثناء التطوير
         try:
+            from jnius import autoclass
             Intent = autoclass('android.content.Intent')
             Uri = autoclass('android.net.Uri')
             PythonActivity = autoclass('org.kivy.android.PythonActivity')
 
             activity = PythonActivity.mActivity
             encoded_code = Uri.encode(code)
-            intent = Intent(Intent.ACTION_CALL)
+            intent = Intent(Intent.ACTION_DIAL)
             intent.setData(Uri.parse(f"tel:{encoded_code}"))
             activity.startActivity(intent)
         except Exception as ex:
@@ -263,6 +262,7 @@ def HomeView(page: ft.Page):
         route="/",
         padding=0,
         bgcolor='#f0f0f0',
+        scroll=ft.ScrollMode.AUTO,
         controls=[
             bannerContainer,
             controlsContainer
