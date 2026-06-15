@@ -34,7 +34,7 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install flet
-        # إذا كان تطبيقك يعتمد على مكتبات خارجية أخرى (مثل requests أو sqlfluff)،
+        # إذا كان تطبيقك يعتمد على مكتبات خارجية أخرى (مثل requests)،
         # يمكنك تفعيل السطر التالي بعد إنشاء ملف requirements.txt:
         # pip install -r requirements.txt
 
@@ -52,18 +52,34 @@ jobs:
         flutter-version: '3.41.7' # قمنا بتغييرها هنا للنسخة المطلوبة لمنع السؤال التفاعلي
         channel: 'stable'
 
-    # 7. تشغيل أمر بناء ملف الـ APK مع إضافة أداة الموافقة التلقائية لضمان عدم توقف البناء
+    # 7. تشغيل أمر بناء تطبيق الأندرويد
     - name: Build Android APK
       run: |
-        # استخدام "yes |" يقوم بالموافقة التلقائية على أي نافذة حوار تفاعلية تظهر أثناء البناء
-        yes | flet build apk --output ussd_pal_app.apk
+        # أمر البناء الافتراضي من فليت، سيقوم بحفظ الملفات في مجلد build/apk
+        yes | flet build apk
 
-    # 8. الرفع التلقائي المباشر لملف الـ APK الناتج إلى حسابك في Dropbox
+    # 8. البحث عن ملف الـ APK الناتج وتجهيزه وتسميته للرفع
+    - name: Locate and Prepare APK
+      run: |
+        # البحث عن أي ملف APK تم توليده في مجلد build
+        APK_PATH=$(find build/ -name "*.apk" | head -n 1)
+        
+        if [ -z "$APK_PATH" ]; then
+          echo "::error::لم يتم العثور على ملف الـ APK الناتج عن البناء!"
+          exit 1
+        fi
+        
+        echo "تم العثور على الملف في المسار: $APK_PATH"
+        # نسخ الملف إلى المجلد الرئيسي وتسميته باسم ثابت للرفع
+        cp "$APK_PATH" ./ussd_pal_app.apk
+        echo "تم تجهيز الملف في المسار الرئيسي باسم ussd_pal_app.apk بنجاح."
+
+    # 9. الرفع التلقائي المباشر لملف الـ APK الحقيقي بعد تجهيزه إلى حسابك في Dropbox
     - name: Upload APK to Dropbox
       env:
         DBX_TOKEN: ${{ secrets.DROPBOX_ACCESS_TOKEN }}
       run: |
-        # أداة curl ترسل ملف الـ APK الصافي مباشرة إلى سيرفرات Dropbox API بدون أقواس تسبب مشاكل في التفسير
+        # الآن سيرفع ملف ussd_pal_app.apk الحقيقي الذي قمنا بنسخه وتجهيزه في الخطوة السابقة
         curl -X POST https://content.dropboxapi.com/2/files/upload \
           --header "Authorization: Bearer $DBX_TOKEN" \
           --header "Dropbox-API-Arg: {\"path\": \"/ussd_pal_app.apk\",\"mode\": \"overwrite\",\"autorename\": true,\"mute\": false,\"strict_conflict\": false}" \
