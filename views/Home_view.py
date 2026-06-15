@@ -1,7 +1,7 @@
 import flet as ft
-import platform
+from jnius import autoclass
 
-def Home_view(page: ft.Page) -> ft.View:
+def HomeView(page: ft.Page):
     # --- قاموس لإدارة حالة خطوات الـ USSD دون الحاجة لكلاس ---
     state = {
         "CURRENT_SERVICE": None,       # نوع الخدمة: "BOP" أو "PALPAY" أو "JAWWAL"
@@ -13,25 +13,21 @@ def Home_view(page: ft.Page) -> ft.View:
     }
 
     def dial_ussd(code: str):
-        # تأجيل الاستيراد تماماً وعزله داخل شرط فحص نظام التشغيل لمنع الانهيار
-        if platform.system() == "Linux" or hasattr(ft, "android"):
-            try:
-                from jnius import autoclass
-                Intent = autoclass('android.content.Intent')
-                Uri = autoclass('android.net.Uri')
-                PythonActivity = autoclass('org.kivy.android.PythonActivity')
+        # تأجيل الاستيراد لمنع انهيار التطبيق عند تشغيله على الكمبيوتر أثناء التطوير
+        try:
+            Intent = autoclass('android.content.Intent')
+            Uri = autoclass('android.net.Uri')
+            PythonActivity = autoclass('org.kivy.android.PythonActivity')
 
-                activity = PythonActivity.mActivity
-                encoded_code = Uri.encode(code)
-                intent = Intent(Intent.ACTION_CALL)
-                intent.setData(Uri.parse(f"tel:{encoded_code}"))
-                activity.startActivity(intent)
-            except Exception as ex:
-                print(f"Native Android Call Error: {ex}")
-                Alert("خطأ في نظام أندرويد", f"فشل الاتصال بالنظام: {str(ex)}")
-        else:
-            # تنبيه مخصص عند التشغيل على نظام الماك أو الويندوز للتجربة والتأكد من صحة الكود
-            Alert("تنبيه البيئة التجريبية", "أنت تعمل الآن خارج بيئة أندرويد الحقيقية.\nكود الـ USSD المولد بنجاح:\n" + code)
+            activity = PythonActivity.mActivity
+            encoded_code = Uri.encode(code)
+            intent = Intent(Intent.ACTION_CALL)
+            intent.setData(Uri.parse(f"tel:{encoded_code}"))
+            activity.startActivity(intent)
+        except Exception as ex:
+            print(f"Native Android Call Error: {ex}")
+            # تنبيه مخصص بديل لـ Alert لمنع مشاكل تعليق الواجهات
+            Alert("تنبيه المحاكي", "أنت تعمل الآن خارج بيئة أندرويد. تم توليد كود الـ USSD بنجاح:\n" + code)
 
     def trigger_palpay(e):
         state["CURRENT_SERVICE"] = "PALPAY"
@@ -39,7 +35,6 @@ def Home_view(page: ft.Page) -> ft.View:
         state["PIN"] = pin_input.value
         state["PALPAY_ACCEPT_OPTION"] = "1"
         
-        # كود التحويل المباشر لـ PalPay
         direct_string = f"*370*1*1*{phoneInput.value}*{amountInput.value}#"
         dial_ussd(direct_string)
 
@@ -64,16 +59,16 @@ def Home_view(page: ft.Page) -> ft.View:
     amountMessage = ft.Text("", color=ft.Colors.RED, size=14, visible=False, text_align=ft.TextAlign.RIGHT)
     pinMessage = ft.Text("", color=ft.Colors.RED, size=14, visible=False, text_align=ft.TextAlign.RIGHT)
 
-    # زر الإرسال (تم ربطه بـ trigger_palpay بما أن الواجهة مخصصة لجوال باي)
+    # زر الإرسال
     BtnSendMoney = ft.ElevatedButton(
         content=ft.Container(
             padding=16,
-            content=ft.Text("إرسال", size=17, weight=ft.FontWeight.BOLD)
+            content=ft.Text("ارسال", size=17)
         ),
         disabled=True,
         bgcolor=ft.Colors.GREEN_600,
         color=ft.Colors.WHITE,
-        on_click=trigger_palpay # تم التعديل هنا ليناسب سياق جوال باي الحالي
+        on_click=trigger_jawwal
     )
 
     def Alert(title, text):
@@ -91,6 +86,7 @@ def Home_view(page: ft.Page) -> ft.View:
         page.open(al)
 
     def validateInputs():
+        # التحقق من رقم الهاتف
         if not phoneInput.value or len(phoneInput.value) != 8:
             phoneMessage.value = "يرجى ادخال رقم الهاتف المكون من 8 أرقام"
             phoneMessage.visible = True
@@ -101,12 +97,14 @@ def Home_view(page: ft.Page) -> ft.View:
             phoneMessage.visible = True
             BtnSendMoney.disabled = True
         
+        # التحقق من المبلغ
         elif not amountInput.value or amountInput.value == '0':
             phoneMessage.visible = False
             amountMessage.value = "يرجى ادخال المبلغ"
             amountMessage.visible = True
             BtnSendMoney.disabled = True
 
+        # التحقق من الرقم السري
         elif not pin_input.value:
             phoneMessage.visible = False
             amountMessage.visible = False
@@ -115,6 +113,7 @@ def Home_view(page: ft.Page) -> ft.View:
             BtnSendMoney.disabled = True
 
         else:
+            # تصفير كل رسائل الخطأ وتفعيل الزر
             phoneMessage.visible = False
             amountMessage.visible = False
             pinMessage.visible = False
@@ -136,7 +135,7 @@ def Home_view(page: ft.Page) -> ft.View:
         )
     )
 
-    # الحقول المدخلة
+    # الحقول المدخلة مع تحديد لوحة المفاتيح الرقمية للأرقام والمبالغ
     phoneInput = ft.TextField(
         keyboard_type=ft.KeyboardType.PHONE, 
         hover_color=ft.Colors.TRANSPARENT, 
@@ -179,6 +178,7 @@ def Home_view(page: ft.Page) -> ft.View:
         on_change=lambda _: validateInputs()
     )
 
+    # حاوية عناصر التحكم
     controlsContainer = ft.Container(
         padding=ft.padding.only(50, 20, 50, 20),
         content=ft.Column(
@@ -258,6 +258,7 @@ def Home_view(page: ft.Page) -> ft.View:
         )
     )
     
+    # إرجاع كائن الـ View بشكل مباشر بدلاً من استخدام الوراثة في الكلاس
     return ft.View(
         route="/",
         padding=0,
@@ -266,6 +267,6 @@ def Home_view(page: ft.Page) -> ft.View:
             bannerContainer,
             controlsContainer
         ],
-        vertical_alignment=ft.MainAxisAlignment.CENTER,
+        vertical_alignment=ft.MainAxisAlignment.START,
         horizontal_alignment=ft.CrossAxisAlignment.STRETCH
     )
