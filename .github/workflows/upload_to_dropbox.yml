@@ -45,18 +45,18 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    # 6. تثبيت محرك فلاتر (Flutter) لأن Flet يعتمد عليه كلياً في رندرة الواجهات والبناء للشرائح المختلفة
+    # 6. تثبيت محرك فلاتر (Flutter) بالنسخة المطابقة لمتطلبات Flet تماماً
     - name: Set up Flutter
       uses: subosito/flutter-action@v2
       with:
-        flutter-version: '3.19.x' # نسخة مستقرة وممتازة للتوافق مع Flet
+        flutter-version: '3.41.7' # قمنا بتغييرها هنا للنسخة المطلوبة لمنع السؤال التفاعلي
         channel: 'stable'
 
-    # 7. تشغيل أمر بناء ملف الـ APK الفعلي الخاص بالتطبيق وتسمية المخرج
+    # 7. تشغيل أمر بناء ملف الـ APK مع إضافة أداة الموافقة التلقائية لضمان عدم توقف البناء
     - name: Build Android APK
       run: |
-        # سيقوم الأمر بإنشاء ملف التطبيق مباشرة في المجلد الرئيسي باسم ussd_pal_app.apk
-        flet build apk --output ussd_pal_app.apk
+        # استخدام "yes |" يقوم بالموافقة التلقائية على أي نافذة حوار تفاعلية تظهر أثناء البناء
+        yes | flet build apk --output ussd_pal_app.apk
 
     # 8. الرفع التلقائي المباشر لملف الـ APK الناتج إلى حسابك في Dropbox
     - name: Upload APK to Dropbox
