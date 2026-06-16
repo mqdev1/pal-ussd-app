@@ -1,4 +1,5 @@
 import flet as ft
+from views.test_view import test_view
 
 def main(page: ft.Page):
     page.title = "Mobile Routing Example"
@@ -13,8 +14,9 @@ def main(page: ft.Page):
             ft.View(
                 route="/",
                 controls=[
-                    ft.AppBar(title=ft.Text("Home Screen"), bgcolor=ft.Colors.SURFACE_CONTAINER),
+                    ft.AppBar(title=ft.Text("Home Screen"), bgcolor=ft.Colors.SURFACE_TINT),
                     ft.ElevatedButton("Go to Settings", on_click=lambda _: page.go("/settings")),
+                    ft.ElevatedButton("Go to Test", on_click=lambda _: page.go("/test")),
                 ],
             )
         )
@@ -25,12 +27,15 @@ def main(page: ft.Page):
                 ft.View(
                     route="/settings",
                     controls=[
-                        ft.AppBar(title=ft.Text("Settings"), bgcolor=ft.Colors.SURFACE_CONTAINER),
+                        ft.AppBar(title=ft.Text("Settings"), bgcolor=ft.Colors.SURFACE_TINT),
                         ft.Text("Welcome to the settings screen!"),
                         ft.ElevatedButton("Go Back", on_click=lambda _: page.go("/")),
                     ],
                 )
             )
+        
+        if page.route == '/test':
+            page.views.append(test_view(page))
         
         page.update()
 
