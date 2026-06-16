@@ -4,8 +4,7 @@ from views.test_view import test_view
 def main(page: ft.Page):
     page.title = "Flet Routing App"
 
-    # 1. تعريف القاموس باستخدام lambda لإرجاع كائن الـ View عند الحاجة فقط
-    # تأكد أن دالة test_view في ملفك الخارجي ترجع كائن ft.View مباشرة
+    # 1. تعريف القاموس
     views = {
         "/": lambda: ft.View(
             route="/",
@@ -24,7 +23,8 @@ def main(page: ft.Page):
                 ft.ElevatedButton("Go Home", on_click=lambda _: page.go("/")),
             ],
         ),
-        "/test": lambda: test_view(page=page) 
+        # استدعاء الدالة الخارجية مع تمرير كائن الصفحة الحالي
+        "/test": lambda: test_view(page) 
     }
 
     # 2. معالجة تغيير الروت بناءً على التكديس التراكمي
@@ -32,14 +32,20 @@ def main(page: ft.Page):
         page.views.clear()
         
         # دائماً نضع الـ Home كقاعدة للتطبيق في الأسفل
-        page.views.append(views["/"]()) # لاحظ الأقواس () لتشغيل الـ lambda
+        page.views.append(views["/"]()) 
         
-        # إذا كان الروت ليس الرئيسية، نقوم بتكديس الصفحة المطلوبة فوق الرئيسية
-        if page.route != "/":
-            if page.route in views:
-                page.views.append(views[page.route]())
+        # التأكد من سلامة الروت الحالي
+        current_route = page.route if page.route else "/"
+        
+        if current_route != "/":
+            if current_route in views:
+                try:
+                    page.views.append(views[current_route]())
+                except Exception as ex:
+                    print(f"Error loading view: {ex}")
+                    # في حال حدوث أي خطأ بالصفحة الخارجية لا يعلق التطبيق بل يظهر صفحة خطأ آمنة
+                    page.views.append(ft.View(route="/error", controls=[ft.Text(f"Error: {ex}")]))
             else:
-                # صفحة 404 اختيارية في حال كتابة روت خاطئ
                 page.views.append(ft.View(route="/404", controls=[ft.Text("Page not found!")]))
             
         page.update()
@@ -47,16 +53,17 @@ def main(page: ft.Page):
     # 3. معالجة زر الرجوع (Back Button)
     def view_pop(e: ft.ViewPopEvent):
         if len(page.views) > 1:
-            page.views.pop() # حذف الصفحة العلوية
-            top_view = page.views[-1] # الحصول على الصفحة السابقة
-            page.route = top_view.route # تحديث المسار نصياً
+            page.views.pop() 
+            top_view = page.views[-1] 
+            page.route = top_view.route 
             page.update()
 
     # 4. تعيين الأحداث
     page.on_route_change = route_change
     page.on_view_pop = view_pop
     
-    # 5. إطلاق التطبيق
-    page.go(page.route)
+    # 5. إطلاق التطبيق الآمن (التأكد من أن الروت الابتدائي صالح)
+    initial_route = page.route if page.route in views else "/"
+    page.go(initial_route)
 
 ft.app(target=main)
