@@ -2,65 +2,61 @@ import flet as ft
 from views.test_view import test_view
 
 def main(page: ft.Page):
-    page.title = "Mobile Routing Example"
-    page.horizontal_alignment = ft.CrossAxisAlignment.CENTER
-    page.vertical_alignment = ft.MainAxisAlignment.CENTER
-    
-    # 1. معالجة تغيير الروت (بناء الـ Stack)
+    page.title = "Flet Routing App"
+
+    # 1. تعريف القاموس باستخدام lambda لإرجاع كائن الـ View عند الحاجة فقط
+    # تأكد أن دالة test_view في ملفك الخارجي ترجع كائن ft.View مباشرة
+    views = {
+        "/": lambda: ft.View(
+            route="/",
+            controls=[
+                ft.AppBar(title=ft.Text("Home"), bgcolor=ft.Colors.SURFACE_CONTAINER_HIGHEST),
+                ft.ElevatedButton("Go to Settings", on_click=lambda _: page.go("/settings")),
+                ft.ElevatedButton("Go to Test", on_click=lambda _: page.go("/test")),
+            ],
+            vertical_alignment=ft.MainAxisAlignment.CENTER,
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER
+        ),
+        "/settings": lambda: ft.View(
+            route="/settings",
+            controls=[
+                ft.AppBar(title=ft.Text("Settings"), bgcolor=ft.Colors.SURFACE_CONTAINER_HIGHEST),
+                ft.ElevatedButton("Go Home", on_click=lambda _: page.go("/")),
+            ],
+        ),
+        "/test": lambda: test_view(page=page) 
+    }
+
+    # 2. معالجة تغيير الروت بناءً على التكديس التراكمي
     def route_change(e: ft.RouteChangeEvent):
-        # في كل تغيير روت، نمسح القائمة لنعيد بناء الهيكل الصحيح من الأسفل للأعلى
         page.views.clear()
         
-        # [دائماً وأبداً] الصفحة الرئيسية هي القاعدة في أسفل الـ Stack
-        page.views.append(
-            ft.View(
-                route="/",
-                controls=[
-                    ft.AppBar(title=ft.Text("Home Screen"), bgcolor=ft.Colors.SURFACE_TINT),
-                    ft.ElevatedButton("Go to Settings", on_click=lambda _: page.go("/settings")),
-                    ft.ElevatedButton("Go to Test", on_click=lambda _: page.go("/test")),
-                ],
-                vertical_alignment=ft.MainAxisAlignment.CENTER,
-                horizontal_alignment=ft.CrossAxisAlignment.CENTER
-            )
-        )
+        # دائماً نضع الـ Home كقاعدة للتطبيق في الأسفل
+        page.views.append(views["/"]()) # لاحظ الأقواس () لتشغيل الـ lambda
         
-        # إذا طلب المستخدم الإعدادات، نضعها "فوق" الرئيسية
-        if page.route == "/settings":
-            page.views.append(
-                ft.View(
-                    route="/settings",
-                    controls=[
-                        ft.AppBar(title=ft.Text("Settings"), bgcolor=ft.Colors.SURFACE_TINT),
-                        ft.Text("Welcome to the settings screen!"),
-                        ft.ElevatedButton("Go Back", on_click=lambda _: page.go("/")),
-                    ],
-                )
-            )
-        
-        # إذا طلب صفحة التيست، نضعها أيضاً "فوق" الرئيسية
-        elif page.route == '/test':
-            # تأكد أن دالة test_view تعيد كائن من نوع ft.View
-            page.views.append(test_view(page))
-        
+        # إذا كان الروت ليس الرئيسية، نقوم بتكديس الصفحة المطلوبة فوق الرئيسية
+        if page.route != "/":
+            if page.route in views:
+                page.views.append(views[page.route]())
+            else:
+                # صفحة 404 اختيارية في حال كتابة روت خاطئ
+                page.views.append(ft.View(route="/404", controls=[ft.Text("Page not found!")]))
+            
         page.update()
 
-    # 2. معالجة زر الرجوع (حذف الصفحة العلوية فقط)
+    # 3. معالجة زر الرجوع (Back Button)
     def view_pop(e: ft.ViewPopEvent):
-        if len(page.views) > 1: # للتأكد من وجود صفحات يمكن الرجوع إليها
-            page.views.pop() # حذف الصفحة الحالية من الأعلى
-            top_view = page.views[-1] # الحصول على الصفحة التي أصبحت في الأعلى (الرئيسية مثلاً)
-            
-            # ملاحظة هامة جداً:
-            # نغير الروت كـ نص فقط ولا نستخدم page.go() لمنع تكرار دالة route_change ودخول التطبيق في Loop
-            page.route = top_view.route 
+        if len(page.views) > 1:
+            page.views.pop() # حذف الصفحة العلوية
+            top_view = page.views[-1] # الحصول على الصفحة السابقة
+            page.route = top_view.route # تحديث المسار نصياً
             page.update()
 
-    # تعيين المستمعين للأحداث
+    # 4. تعيين الأحداث
     page.on_route_change = route_change
     page.on_view_pop = view_pop
     
-    # تشغيل التطبيق على الروت الحالي
+    # 5. إطلاق التطبيق
     page.go(page.route)
 
 ft.app(target=main)
