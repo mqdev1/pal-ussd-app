@@ -1,6 +1,7 @@
 import flet as ft
+from Router import Router
+def home_view(page: ft.Page, route:Router)->ft.Control:
 
-def HomeView(page: ft.Page):
     state = {
         "CURRENT_SERVICE": "JAWWAL",  # القيمة الافتراضية
         "CURRENT_STEP": 0,
@@ -24,7 +25,7 @@ def HomeView(page: ft.Page):
             activity.startActivity(intent)
         except Exception as ex:
             print(f"Native Android Call Error: {ex}")
-            Alert("تنبيه المحاكي", "أنت تعمل الآن خارج بيئة أندرويد. تم توليد كود الـ USSD بنجاح:\n" + code)
+            Alert("USSD PAL", ex)
 
     # دالة موحدة لمعالجة الضغط على زر الإرسال بناءً على الخدمة المختارة
     def handle_send_click(e):
@@ -32,13 +33,13 @@ def HomeView(page: ft.Page):
         state["RECIPIENT"] = phoneInput.value
         state["AMOUNT"] = amountInput.value
 
-        if service_dropdown.value == "JAWWAL":
+        if serviceDDP.value == "JAWWAL":
             state["CURRENT_SERVICE"] = "JAWWAL"
             dial_ussd("*110#")
-        elif service_dropdown.value == "BOP":
+        elif serviceDDP.value == "BOP":
             state["CURRENT_SERVICE"] = "BOP"
             dial_ussd("*267#")
-        elif service_dropdown.value == "PALPAY":
+        elif serviceDDP.value == "PALPAY":
             state["CURRENT_SERVICE"] = "PALPAY"
             # إرسال الكود المباشر المدمج لـ PalPay
             direct_string = f"*370*1*1*{phoneInput.value}*{amountInput.value}#"
@@ -49,16 +50,30 @@ def HomeView(page: ft.Page):
     pinMessage = ft.Text("", color=ft.Colors.RED, size=14, visible=False, text_align=ft.TextAlign.RIGHT)
 
     # إضافة قائمة منسدلة أنيقة لاختيار الخدمة المطلوبة
-    service_dropdown = ft.Dropdown(
-        label="اختر الخدمة المزودة",
+    serviceDDP = ft.Dropdown(
+        expand=True,
+        label_style = ft.TextStyle(
+            color = ft.Colors.BLACK
+        ),
         value="JAWWAL", # افتراضي جوال باي
         color=ft.Colors.BLACK,
-        border_color=ft.Colors.GREEN_500,
-        alignment=ft.alignment.center_right,
+        border_color=ft.Colors.TRANSPARENT,
         options=[
             ft.dropdown.Option("JAWWAL", "جوال باي (Jawwal Pay)"),
             ft.dropdown.Option("BOP", "بنك فلسطين (BOP)"),
             ft.dropdown.Option("PALPAY", "بال بي (PalPay)"),
+        ]
+    )
+    service_dropdown = ft.Column(
+        horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+        controls = [
+            ft.Text("اختر نوع الخدمة", size=15, color=ft.Colors.BLACK, weight=ft.FontWeight.W_500),
+            ft.Container(
+                bgcolor=ft.Colors.WHITE,
+                border_radius=10,
+                expand=True,
+                content=serviceDDP
+            )
         ]
     )
 
@@ -226,12 +241,7 @@ def HomeView(page: ft.Page):
         )
     )
     
-    return ft.View(
-        route="/",
-        padding=0,
-        bgcolor='#f0f0f0',
-        scroll=ft.ScrollMode.AUTO,
+    return ft.Column(
         controls=[bannerContainer, controlsContainer],
-        vertical_alignment=ft.MainAxisAlignment.START,
         horizontal_alignment=ft.CrossAxisAlignment.STRETCH
     )
