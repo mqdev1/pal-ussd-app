@@ -1,11 +1,11 @@
 import flet as ft
-import asyncio
+import time
 from views.home_view import home_view
 from views.test_view import test_view
 from Router import Router
 
 # تحويل الدالة إلى async لمنع تجمد التطبيق أثناء شاشة الترحيب
-async def main(page: ft.Page):
+def main(page: ft.Page):
     page.title = "USSD PAL"
     page.theme_mode = ft.ThemeMode.LIGHT
     page.padding = 0
@@ -36,9 +36,9 @@ async def main(page: ft.Page):
     router.go_to("welcome_view")
 
     # الانتظار بشكل ذكي دون تجميد الواجهة (Main Thread)
-    await asyncio.sleep(3) 
+    time.sleep(3) 
 
     # الانتقال للرئيسية
     router.go_to("home_view")
 
-ft.app(target=main, assets_dir='assets')
+ft.app(target=main)
