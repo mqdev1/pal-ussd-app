@@ -127,7 +127,7 @@ def home_view(page: ft.Page, route:Router)->ft.Control:
     bannerContainer = ft.Container(
         bgcolor=ft.Colors.GREEN_500,
         rtl=True,
-        padding=ft.padding.only(40, 30, 40, 30),
+        padding=10,
         content=ft.Column(
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             controls=[
@@ -138,8 +138,8 @@ def home_view(page: ft.Page, route:Router)->ft.Control:
     )
 
     phoneInput = ft.TextField(
-        keyboard_type=ft.KeyboardType.PHONE, 
-        max_length=8, 
+        keyboard_type=ft.KeyboardType.PHONE,
+        hint_text = '123456789',
         color=ft.Colors.BLACK, 
         border_color=ft.Colors.TRANSPARENT, 
         expand=1,
@@ -149,7 +149,6 @@ def home_view(page: ft.Page, route:Router)->ft.Control:
     amountInput = ft.TextField(
         keyboard_type=ft.KeyboardType.NUMBER,
         color=ft.Colors.BLACK,
-        max_length=10,
         border_color=ft.Colors.TRANSPARENT, 
         expand=1,
         on_change=lambda _: validateInputs()
@@ -160,20 +159,19 @@ def home_view(page: ft.Page, route:Router)->ft.Control:
         password=True,
         can_reveal_password=True,
         color=ft.Colors.BLACK,
-        max_length=10,
         border_color=ft.Colors.TRANSPARENT, 
         expand=1,
         on_change=lambda _: validateInputs()
     )
 
     controlsContainer = ft.Container(
-        padding=ft.padding.only(50, 20, 50, 20),
+        padding=10,
         content=ft.Column(
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             controls=[
                 # حقن حقل الاختيار المنسدل الجديد في أعلى قائمة التحكم
                 service_dropdown,
-                ft.Container(padding=ft.padding.only(0, 5, 0, 5)),
+                ft.Container(padding=10),
                 
                 ft.Text("رقم الجوال", size=15, color=ft.Colors.BLACK, weight=ft.FontWeight.W_500),
                 ft.Column(
@@ -183,7 +181,7 @@ def home_view(page: ft.Page, route:Router)->ft.Control:
                         ft.Container(
                             bgcolor=ft.Colors.WHITE,
                             border_radius=10,
-                            padding=ft.padding.only(10, 0, 10, 0),
+                            padding=10,
                             content=ft.Row(
                                 spacing=0,
                                 rtl=False,
@@ -196,7 +194,7 @@ def home_view(page: ft.Page, route:Router)->ft.Control:
                         phoneMessage
                     ]
                 ),
-                ft.Container(padding=ft.padding.only(0, 10, 0, 10)),
+                ft.Container(padding=10),
                 ft.Text("المبلغ", size=15, color=ft.Colors.BLACK, weight=ft.FontWeight.W_500),
                 ft.Column(
                     spacing=3,
@@ -205,7 +203,7 @@ def home_view(page: ft.Page, route:Router)->ft.Control:
                         ft.Container(
                             bgcolor=ft.Colors.WHITE,
                             border_radius=10,
-                            padding=ft.padding.only(10, 0, 10, 0),
+                            padding=10,
                             content=ft.Row(
                                 spacing=0,
                                 controls=[
@@ -217,7 +215,7 @@ def home_view(page: ft.Page, route:Router)->ft.Control:
                         amountMessage
                     ]
                 ),
-                ft.Container(padding=ft.padding.only(0, 10, 0, 10)),
+                ft.Container(padding=10),
                 ft.Text("الرقم السري", size=15, color=ft.Colors.BLACK, weight=ft.FontWeight.W_500),
                 ft.Column(
                     spacing=3,
@@ -226,13 +224,13 @@ def home_view(page: ft.Page, route:Router)->ft.Control:
                         ft.Container(
                             bgcolor=ft.Colors.WHITE,
                             border_radius=10,
-                            padding=ft.padding.only(10, 0, 10, 0),
+                            padding=10,
                             content=ft.Row(spacing=0, rtl=False, controls=[pin_input])
                         ),
                         pinMessage
                     ]
                 ),
-                ft.Container(padding=ft.padding.only(0, 15, 0, 15)),
+                ft.Container(padding=10),
                 ft.Column(
                     horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
                     controls=[BtnSendMoney]
@@ -241,7 +239,10 @@ def home_view(page: ft.Page, route:Router)->ft.Control:
         )
     )
     
-    return ft.Column(
-        controls=[bannerContainer, controlsContainer],
-        horizontal_alignment=ft.CrossAxisAlignment.STRETCH
+    return ft.Container(
+        padding = 20,
+        content = ft.Column(
+            controls=[bannerContainer, controlsContainer],
+            horizontal_alignment=ft.CrossAxisAlignment.STRETCH
+        )
     )
