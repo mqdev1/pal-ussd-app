@@ -69,8 +69,7 @@ jobs:
       env:
         DBX_TOKEN: ${{ secrets.DROPBOX_ACCESS_TOKEN }}
       run: |
-        # تم تصحيح الرابط هنا بإضافة كلمة content في البداية لتتعرف عليه شبكة جيت هاب
-        curl -X POST https://dropboxapi.com \
+        curl -X POST https://content.dropboxapi.com/2/files/upload \
           --header "Authorization: Bearer $DBX_TOKEN" \
           --header "Dropbox-API-Arg: {\"path\": \"/ussd_pal_app.apk\",\"mode\": \"overwrite\",\"autorename\": true,\"mute\": false,\"strict_conflict\": false}" \
           --header "Content-Type: application/octet-stream" \
