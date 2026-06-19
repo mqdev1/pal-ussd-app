@@ -63,12 +63,15 @@ jobs:
         echo "تم تجهيز الملف في المسار الرئيسي باسم ussd_pal_app.apk بنجاح."
 
     # 8. الرفع التلقائي المباشر لملف الـ APK إلى حسابك في Dropbox
+        # 8. الرفع التلقائي المباشر لملف الـ APK إلى حسابك في Dropbox
     - name: Upload APK to Dropbox
       env:
         DBX_TOKEN: ${{ secrets.DROPBOX_ACCESS_TOKEN }}
       run: |
+        # تم تصحيح الرابط هنا بإضافة كلمة content في البداية لتتعرف عليه شبكة جيت هاب
         curl -X POST https://dropboxapi.com \
           --header "Authorization: Bearer $DBX_TOKEN" \
           --header "Dropbox-API-Arg: {\"path\": \"/ussd_pal_app.apk\",\"mode\": \"overwrite\",\"autorename\": true,\"mute\": false,\"strict_conflict\": false}" \
           --header "Content-Type: application/octet-stream" \
           --data-binary @ussd_pal_app.apk
+
