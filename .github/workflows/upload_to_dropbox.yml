@@ -23,18 +23,18 @@ jobs:
           exit 1
         fi
 
-    # 3. إعداد لغة بايثون (Python) بالإصدار الحديث المطابق لجهازك
+     # 3. إعداد لغة بايثون بالإصدار المستقر المتوافق مع المكتبات المطلوبة
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.13'
+        python-version: '3.11' # إجبار جيت هاب على استخدام 3.11
 
-    # 4. تثبيت مكتبة Flet الحديثة وترقية أداة pip لإدارة الحزم
+    # 4. تثبيت الحزم مع ترقية أداة التثبيت واستخدام إصدار متوافق من pyjnius
     - name: Install Python Dependencies
       run: |
-        python -m pip install --upgrade pip
-        pip install "cython<3.0.0" # استخدام إصدار Cython متوافق مع نسخة pyjnius
-        pip install flet==0.85.3 pyjnius==1.6.1
+        python -m pip install --upgrade pip setuptools wheel
+        pip install cython
+        pip install flet==0.85.3 pyjnius==1.7.0
 
     # 5. تثبيت جافا (Java JDK 17) المطلوبة والأساسية لبناء حزم الأندرويد
     - name: Set up JDK 17
