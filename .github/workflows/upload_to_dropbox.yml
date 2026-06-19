@@ -4,7 +4,7 @@ name: Build Flet APK and Upload to Dropbox
 on:
   push:
     branches: [ "main" ] # سيعمل تلقائياً عند عمل Push لفرع main
-  workflow_dispatch: # يتيح لك تشغيل المسار يدوياً بضغطة زر من VS Code أو موقع GitHub
+  workflow_dispatch: # يتيح لك تشغيل المسار يدوياً بضغطة زر من موقع GitHub
 
 jobs:
   build-and-upload:
@@ -23,19 +23,18 @@ jobs:
           exit 1
         fi
 
-    # 3. إعداد لغة بايثون (Python) داخل السيرفر الافتراضي
+    # 3. إعداد لغة بايثون (Python) بالإصدار الحديث المطابق لجهازك
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.10'
+        python-version: '3.13'
 
-    # 4. تثبيت مكتبة Flet وترقية أداة pip لإدارة الحزم
+    # 4. تثبيت مكتبة Flet الحديثة وترقية أداة pip لإدارة الحزم
     - name: Install Python Dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install flet
-        # إذا كان تطبيقك يعتمد على مكتبات خارجية أخرى (مثل requests)،
-        # يمكنك تفعيل السطر التالي بعد إنشاء ملف requirements.txt:
+        pip install flet==0.85.3
+        # إذا كان تطبيقك يعتمد على مكتبات أخرى، قم بإنشاء ملف requirements.txt وتفعيل السطر التالي:
         # pip install -r requirements.txt
 
     # 5. تثبيت جافا (Java JDK 17) المطلوبة والأساسية لبناء حزم الأندرويد
@@ -45,23 +44,17 @@ jobs:
         java-version: '17'
         distribution: 'temurin'
 
-    # 6. تثبيت محرك فلاتر (Flutter) بالنسخة المطابقة لمتطلبات Flet تماماً
-    - name: Set up Flutter
-      uses: subosito/flutter-action@v2
-      with:
-        flutter-version: '3.41.7' # قمنا بتغييرها هنا للنسخة المطلوبة لمنع السؤال التفاعلي
-        channel: 'stable'
-
-    # 7. تشغيل أمر بناء تطبيق الأندرويد
+    # 6. تشغيل أمر بناء تطبيق الأندرويد بالأسلوب الحديث لنسخة 0.85.3
+    # (تم حذف خطوة تثبيت Flutter اليدوية لأن Flet الحديث سيتولى تحميل النسخة المتوافقة تلقائياً بالخلفية)
     - name: Build Android APK
       run: |
-        # أمر البناء الافتراضي من فليت، سيقوم بحفظ الملفات في مجلد build/apk
-        yes | flet build apk
+        # استخدام خيار تبيان التفاصيل لضمان البناء المستقر داخل السيرفر
+        flet build apk --verbose
 
-    # 8. البحث عن ملف الـ APK الناتج وتجهيزه وتسميته للرفع
+    # 7. البحث عن ملف الـ APK الناتج وتجهيزه وتسميته للرفع
     - name: Locate and Prepare APK
       run: |
-        # البحث عن أي ملف APK تم توليده في مجلد build
+        # في النسخ الحديثة يتم حفظ الملف داخل مجلد build/apk
         APK_PATH=$(find build/ -name "*.apk" | head -n 1)
         
         if [ -z "$APK_PATH" ]; then
@@ -74,12 +67,11 @@ jobs:
         cp "$APK_PATH" ./ussd_pal_app.apk
         echo "تم تجهيز الملف في المسار الرئيسي باسم ussd_pal_app.apk بنجاح."
 
-    # 9. الرفع التلقائي المباشر لملف الـ APK الحقيقي بعد تجهيزه إلى حسابك في Dropbox
+    # 8. الرفع التلقائي المباشر لملف الـ APK إلى حسابك في Dropbox
     - name: Upload APK to Dropbox
       env:
         DBX_TOKEN: ${{ secrets.DROPBOX_ACCESS_TOKEN }}
       run: |
-        # الآن سيرفع ملف ussd_pal_app.apk الحقيقي الذي قمنا بنسخه وتجهيزه في الخطوة السابقة
         curl -X POST https://content.dropboxapi.com/2/files/upload \
           --header "Authorization: Bearer $DBX_TOKEN" \
           --header "Dropbox-API-Arg: {\"path\": \"/ussd_pal_app.apk\",\"mode\": \"overwrite\",\"autorename\": true,\"mute\": false,\"strict_conflict\": false}" \
