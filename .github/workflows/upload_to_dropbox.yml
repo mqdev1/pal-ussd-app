@@ -34,8 +34,6 @@ jobs:
       run: |
         python -m pip install --upgrade pip
         pip install flet==0.85.3
-        # إذا كان تطبيقك يعتمد على مكتبات أخرى، قم بإنشاء ملف requirements.txt وتفعيل السطر التالي:
-        # pip install -r requirements.txt
 
     # 5. تثبيت جافا (Java JDK 17) المطلوبة والأساسية لبناء حزم الأندرويد
     - name: Set up JDK 17
@@ -45,16 +43,14 @@ jobs:
         distribution: 'temurin'
 
     # 6. تشغيل أمر بناء تطبيق الأندرويد بالأسلوب الحديث لنسخة 0.85.3
-    # (تم حذف خطوة تثبيت Flutter اليدوية لأن Flet الحديث سيتولى تحميل النسخة المتوافقة تلقائياً بالخلفية)
+    # (قمنا بحذف كلمة src لأن الملفات أصبحت في الجذر الرئيسي)
     - name: Build Android APK
       run: |
-        # استخدام خيار تبيان التفاصيل لضمان البناء المستقر دا
         yes | flet build apk --verbose
 
     # 7. البحث عن ملف الـ APK الناتج وتجهيزه وتسميته للرفع
     - name: Locate and Prepare APK
       run: |
-        # في النسخ الحديثة يتم حفظ الملف داخل مجلد build/apk
         APK_PATH=$(find build/ -name "*.apk" | head -n 1)
         
         if [ -z "$APK_PATH" ]; then
@@ -63,7 +59,6 @@ jobs:
         fi
         
         echo "تم العثور على الملف في المسار: $APK_PATH"
-        # نسخ الملف إلى المجلد الرئيسي وتسميته باسم ثابت للرفع
         cp "$APK_PATH" ./ussd_pal_app.apk
         echo "تم تجهيز الملف في المسار الرئيسي باسم ussd_pal_app.apk بنجاح."
 
@@ -72,7 +67,7 @@ jobs:
       env:
         DBX_TOKEN: ${{ secrets.DROPBOX_ACCESS_TOKEN }}
       run: |
-        curl -X POST https://content.dropboxapi.com/2/files/upload \
+        curl -X POST https://dropboxapi.com \
           --header "Authorization: Bearer $DBX_TOKEN" \
           --header "Dropbox-API-Arg: {\"path\": \"/ussd_pal_app.apk\",\"mode\": \"overwrite\",\"autorename\": true,\"mute\": false,\"strict_conflict\": false}" \
           --header "Content-Type: application/octet-stream" \
