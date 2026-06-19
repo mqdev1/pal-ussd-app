@@ -5,69 +5,47 @@ def main(page: ft.Page):
     page.theme_mode = ft.ThemeMode.LIGHT
     page.padding = 0
     page.spacing = 0
-    page.bgcolor = ft.Colors.grey_100  # خلفية مريحة للعين لتفادي بياض الشاشة الكامل
+    page.bgcolor = ft.Colors.GREY_100 # لتجنب البياض المفاجئ
 
-    # الحفاظ على حالة التطبيق (State)
     state = {
         "CURRENT_SERVICE": "JAWWAL",
-        "CURRENT_STEP": 0,
         "RECIPIENT": "",
         "AMOUNT": "",
-        "PIN": "",
-        "PALPAY_ACCEPT_OPTION": "1"
+        "PIN": ""
     }
 
-    # دالة التنبيهات (AlertDialog)
     def Alert(title, text):
         al = ft.AlertDialog(
-            modal=False,
             title=ft.Text(title, size=20, weight=ft.FontWeight.BOLD),
             content=ft.Text(str(text)),
             actions=[ft.TextButton(text="حسناً", on_click=lambda _: page.close(al))]
         )
         page.open(al)
 
-    # دالة تشغيل كود USSD (معدلة لتجنب الشاشة البيضاء)
     def dial_ussd(code: str):
         try:
-            # تم نقل الـ import هنا لضمان عدم انهيار التطبيق أثناء الإقلاع
-            from jnius import autoclass
-            Intent = autoclass('android.content.Intent')
-            Uri = autoclass('android.net.Uri')
-            PythonActivity = autoclass('org.kivy.android.PythonActivity')
-
-            activity = PythonActivity.mActivity
-            encoded_code = Uri.encode(code)
-            intent = Intent(Intent.ACTION_DIAL)
-            intent.setData(Uri.parse(f"tel:{encoded_code}"))
-            activity.startActivity(intent)
+            clean_code = code.replace("#", "%23")
+            page.launch_url(f"tel:{clean_code}")
         except Exception as ex:
-            print(f"Native Android Call Error: {ex}")
-            Alert("خطأ في النظام (Android Error)", f"فشل استدعاء اتصال النظام. السبب المحتمل: البيئة ليست أندرويد أو نقص مكتبة jnius.\nالتفاصيل: {ex}")
+            Alert("خطأ", ex)
 
-    # معالجة الضغط على زر الإرسال
     def handle_send_click(e):
         state["PIN"] = pin_input.value
         state["RECIPIENT"] = phoneInput.value
         state["AMOUNT"] = amountInput.value
 
         if serviceDDP.value == "JAWWAL":
-            state["CURRENT_SERVICE"] = "JAWWAL"
             dial_ussd("*110#")
         elif serviceDDP.value == "BOP":
-            state["CURRENT_SERVICE"] = "BOP"
             dial_ussd("*267#")
         elif serviceDDP.value == "PALPAY":
-            state["CURRENT_SERVICE"] = "PALPAY"
             direct_string = f"*370*1*1*{phoneInput.value}*{amountInput.value}#"
             dial_ussd(direct_string)
 
-    # رسائل الخطأ والتحقق
-    phoneMessage = ft.Text("", color=ft.Colors.RED, size=14, visible=False, text_align=ft.TextAlign.RIGHT)
-    amountMessage = ft.Text("", color=ft.Colors.RED, size=14, visible=False, text_align=ft.TextAlign.RIGHT)
-    pinMessage = ft.Text("", color=ft.Colors.RED, size=14, visible=False, text_align=ft.TextAlign.RIGHT)
+    phoneMessage = ft.Text("", color=ft.Colors.RED, size=14, visible=False)
+    amountMessage = ft.Text("", color=ft.Colors.RED, size=14, visible=False)
+    pinMessage = ft.Text("", color=ft.Colors.RED, size=14, visible=False)
 
-    # التحقق من المدخلات
     def validateInputs():
         if not phoneInput.value or len(phoneInput.value) != 8:
             phoneMessage.value = "يرجى ادخال رقم الهاتف المكون من 8 أرقام"
@@ -95,9 +73,7 @@ def main(page: ft.Page):
             BtnSendMoney.disabled = False
         page.update()
 
-    # عناصر واجهة المستخدم (UI Controls)
     serviceDDP = ft.Dropdown(
-        label_style=ft.TextStyle(color=ft.Colors.BLACK),
         value="JAWWAL",
         color=ft.Colors.BLACK,
         border_color=ft.Colors.TRANSPARENT,
@@ -110,7 +86,7 @@ def main(page: ft.Page):
 
     service_dropdown = ft.Column(
         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-        controls=[
+        controls = [
             ft.Text("اختر نوع الخدمة", size=15, color=ft.Colors.BLACK, weight=ft.FontWeight.W_500),
             ft.Container(
                 bgcolor=ft.Colors.WHITE,
@@ -120,15 +96,17 @@ def main(page: ft.Page):
         ]
     )
 
+    # تعديل الزر ليتمدد برمجياً بشكل آمن وبدون Container داخلي معقد
     BtnSendMoney = ft.ElevatedButton(
-        content=ft.Container(
-            padding=16,
-            content=ft.Text("ارسال", size=17)
+        text="ارسال",
+        style=ft.ButtonStyle(
+            padding=20,
+            shape=ft.RoundedRectangleBorder(radius=10),
         ),
         disabled=True,
         bgcolor=ft.Colors.GREEN_600,
         color=ft.Colors.WHITE,
-        on_click=handle_send_click
+        on_click=handle_send_click 
     )
 
     bannerContainer = ft.Container(
@@ -149,7 +127,6 @@ def main(page: ft.Page):
         max_length=8, 
         color=ft.Colors.BLACK, 
         border_color=ft.Colors.TRANSPARENT, 
-        expand=1,
         on_change=lambda _: validateInputs()
     )
 
@@ -158,7 +135,6 @@ def main(page: ft.Page):
         color=ft.Colors.BLACK,
         max_length=10,
         border_color=ft.Colors.TRANSPARENT, 
-        expand=1,
         on_change=lambda _: validateInputs()
     )
 
@@ -169,7 +145,6 @@ def main(page: ft.Page):
         color=ft.Colors.BLACK,
         max_length=10,
         border_color=ft.Colors.TRANSPARENT, 
-        expand=1,
         on_change=lambda _: validateInputs()
     )
 
@@ -177,85 +152,67 @@ def main(page: ft.Page):
         padding=ft.padding.only(50, 20, 50, 20),
         content=ft.Column(
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+            spacing=15, # توزيع المسافات بشكل تلقائي آمن بدلاً من تكرار Containers فارغة
             controls=[
                 service_dropdown,
-                ft.Container(padding=ft.padding.only(0, 5, 0, 5)),
+                
                 ft.Text("رقم الجوال", size=15, color=ft.Colors.BLACK, weight=ft.FontWeight.W_500),
-                ft.Column(
-                    spacing=3,
-                    horizontal_alignment=ft.CrossAxisAlignment.END,
-                    controls=[
-                        ft.Container(
-                            bgcolor=ft.Colors.WHITE,
-                            border_radius=10,
-                            padding=ft.padding.only(10, 0, 10, 0),
-                            content=ft.Row(
-                                spacing=0,
-                                rtl=False,
-                                controls=[
-                                    ft.Text("05", size=20, color=ft.Colors.BLACK),
-                                    phoneInput
-                                ]
-                            )
-                        ),
-                        phoneMessage
-                    ]
+                ft.Container(
+                    bgcolor=ft.Colors.WHITE,
+                    border_radius=10,
+                    padding=ft.padding.only(15, 0, 15, 0),
+                    content=ft.Row(
+                        alignment=ft.MainAxisAlignment.START,
+                        controls=[
+                            ft.Text("05", size=20, color=ft.Colors.BLACK),
+                            ft.Container(content=phoneInput, expand=True) # التمدد المحمي هنا
+                        ]
+                    )
                 ),
-                ft.Container(padding=ft.padding.only(0, 10, 0, 10)),
+                phoneMessage,
+                
                 ft.Text("المبلغ", size=15, color=ft.Colors.BLACK, weight=ft.FontWeight.W_500),
-                ft.Column(
-                    spacing=3,
-                    horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                    controls=[
-                        ft.Container(
-                            bgcolor=ft.Colors.WHITE,
-                            border_radius=10,
-                            padding=ft.padding.only(10, 0, 10, 0),
-                            content=ft.Row(
-                                spacing=0,
-                                controls=[
-                                    amountInput,
-                                    ft.Text("شيكل", size=16, color=ft.Colors.BLACK)
-                                ]
-                            )
-                        ),
-                        amountMessage
-                    ]
+                ft.Container(
+                    bgcolor=ft.Colors.WHITE,
+                    border_radius=10,
+                    padding=ft.padding.only(15, 0, 15, 0),
+                    content=ft.Row(
+                        controls=[
+                            ft.Container(content=amountInput, expand=True),
+                            ft.Text("شيكل", size=16, color=ft.Colors.BLACK)
+                        ]
+                    )
                 ),
-                ft.Container(padding=ft.padding.only(0, 10, 0, 10)),
+                amountMessage,
+                
                 ft.Text("الرقم السري", size=15, color=ft.Colors.BLACK, weight=ft.FontWeight.W_500),
-                ft.Column(
-                    spacing=3,
-                    horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-                    controls=[
-                        ft.Container(
-                            bgcolor=ft.Colors.WHITE,
-                            border_radius=10,
-                            padding=ft.padding.only(10, 0, 10, 0),
-                            content=ft.Row(spacing=0, rtl=False, controls=[pin_input])
-                        ),
-                        pinMessage
-                    ]
+                ft.Container(
+                    bgcolor=ft.Colors.WHITE,
+                    border_radius=10,
+                    padding=ft.padding.only(15, 0, 15, 0),
+                    content=pin_input # الـ TextField مباشرة هنا لا يحتاج Row طالما هو لوحده
                 ),
-                ft.Container(padding=ft.padding.only(0, 15, 0, 15)),
-                ft.Column(
-                    horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
-                    controls=[BtnSendMoney]
+                pinMessage,
+                
+                # جعل الزر يتمدد بعرض الشاشة بشكل آمن جداً للأندرويد
+                ft.Row(
+                    controls=[BtnSendMoney],
+                    alignment=ft.MainAxisAlignment.CENTER,
                 )
             ]
         )
     )
 
-    # تجميع وحقن الواجهة في الصفحة مباشرة
+    # بناء الصفحة داخل دالة حماية قصوى
     try:
         page.add(
             ft.Column(
                 controls=[bannerContainer, controlsContainer],
-                horizontal_alignment=ft.CrossAxisAlignment.STRETCH
+                scroll=ft.ScrollMode.AUTO # إضافة سكرول تلقائي لمنع الـ Overflow على الشاشات الصغيرة
             )
         )
     except Exception as e:
-        page.add(ft.Text(f"UI Error: {e}", color="red"))
+        page.add(ft.Text(f"Layout Error: {e}", color="red"))
         
     page.update()
 
