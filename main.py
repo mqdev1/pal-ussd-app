@@ -35,7 +35,7 @@ async def main(page: ft.Page):
         
         router.register_route("home_view", lambda: home_view(page, router))
 
-        router.register_route("test_view", lambda: test_view(page, router))
+        #router.register_route("test_view", lambda: test_view(page, router))
 
         # التوجه لشاشة الترحيب
         router.go_to("welcome_view")
