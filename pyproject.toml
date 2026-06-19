@@ -30,11 +30,12 @@ permissions = [
 # -----------------------------------------------------
 
 [tool.flet.app]
-path = "src"
+path = "."
 
 [tool.uv]
 dev-dependencies = [
     "flet[all]==0.85.3",
+    "pyjnius==1.6.1"
 ]
 
 [tool.poetry]
