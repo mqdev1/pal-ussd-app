@@ -1,0 +1,44 @@
+[project]
+name = "app2"
+version = "0.1.0"
+description = ""
+readme = "README.md"
+requires-python = ">=3.10"
+authors = [
+    { name = "Flet developer", email = "you@example.com" }
+]
+dependencies = [
+  "flet==0.85.3"
+]
+
+[tool.flet]
+# الاسم التعريفي للمتجر (يمكنك تغييره لاحقاً باسمك)
+org = "com.polarbear"
+
+# الاسم الذي سيظهر تحت أيقونة التطبيق في شاشة الهاتف
+product = "تطبيقي الأول"
+
+company = "Flet"
+copyright = "Copyright (C) 2026 by Flet"
+
+# ----------------- إضافة الصلاحيات هنا -----------------
+[tool.flet.android]
+permissions = [
+  "android.permission.CALL_PHONE",       # صلاحية إجراء المكالمات المباشرة
+  "android.permission.READ_PHONE_STATE"   # صلاحية قراءة حالة الهاتف (مهمة مع عمليات الاتصال ورموز USSD)
+]
+# -----------------------------------------------------
+
+[tool.flet.app]
+path = "src"
+
+[tool.uv]
+dev-dependencies = [
+    "flet[all]==0.85.3",
+]
+
+[tool.poetry]
+package-mode = false
+
+[tool.poetry.group.dev.dependencies]
+flet = {extras = ["all"], version = "0.85.3"}
