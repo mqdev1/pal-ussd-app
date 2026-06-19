@@ -8,7 +8,8 @@ authors = [
     { name = "Flet developer", email = "you@example.com" }
 ]
 dependencies = [
-  "flet==0.85.3"
+  "flet==0.85.3",
+  "pyjnius==1.6.1"
 ]
 
 [tool.flet]
@@ -24,8 +25,8 @@ copyright = "Copyright (C) 2026 by Flet"
 # ----------------- إضافة الصلاحيات هنا -----------------
 [tool.flet.android]
 permissions = [
-  "android.permission.CALL_PHONE",       # صلاحية إجراء المكالمات المباشرة
-  "android.permission.READ_PHONE_STATE"   # صلاحية قراءة حالة الهاتف (مهمة مع عمليات الاتصال ورموز USSD)
+  "android.permission.CALL_PHONE",
+  "android.permission.READ_PHONE_STATE"
 ]
 # -----------------------------------------------------
 
@@ -34,8 +35,7 @@ path = "."
 
 [tool.uv]
 dev-dependencies = [
-    "flet[all]==0.85.3",
-    "pyjnius==1.6.1"
+    "flet[all]==0.85.3"
 ]
 
 [tool.poetry]
