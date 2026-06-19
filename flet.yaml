@@ -1,0 +1,11 @@
+app:
+  name: "USSD PAL"
+  package: "com.mahmoud.usdpal" # معرف فريد للتطبيق
+  version: "1.0.0"
+  build_number: 1
+
+android:
+  permissions:
+    - CALL_PHONE # صلاحية طلب أكواد الـ USSD والاتصال
+  # إذا كنت تحتاج الإنترنت لإرسال بيانات أو تحديثات:
+    - INTERNET
