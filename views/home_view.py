@@ -45,7 +45,10 @@ def home_view(page: ft.Page, route: Router) -> ft.Control:
                 activity.startActivity(intent)
                 
         except Exception as ex:
-            print(f"Error checking accessibility permission: {ex}")
+            page.snack_bar = ft.SnackBar(
+                ft.Text(f"Error checking accessibility permission: {ex}"), 
+                open=True
+            )
 
     def dial_ussd(code: str):
         try:
@@ -93,6 +96,7 @@ def home_view(page: ft.Page, route: Router) -> ft.Control:
         expand=True,
         label_style=ft.TextStyle(color=ft.Colors.BLACK),
         value="JAWWAL",
+        text_size = 15,
         color=ft.Colors.BLACK,
         border_color=ft.Colors.TRANSPARENT,
         options=[
@@ -181,6 +185,7 @@ def home_view(page: ft.Page, route: Router) -> ft.Control:
         color=ft.Colors.BLACK, 
         border_color=ft.Colors.TRANSPARENT, 
         expand=1,
+        text_size = 15,
         on_change=lambda _: validateInputs()
     )
 
@@ -189,6 +194,7 @@ def home_view(page: ft.Page, route: Router) -> ft.Control:
         color=ft.Colors.BLACK,
         border_color=ft.Colors.TRANSPARENT, 
         expand=1,
+        text_size = 15,
         on_change=lambda _: validateInputs()
     )
 
@@ -199,6 +205,7 @@ def home_view(page: ft.Page, route: Router) -> ft.Control:
         color=ft.Colors.BLACK,
         border_color=ft.Colors.TRANSPARENT, 
         expand=1,
+        text_size = 15,
         on_change=lambda _: validateInputs()
     )
 
@@ -278,9 +285,21 @@ def home_view(page: ft.Page, route: Router) -> ft.Control:
     
     # الحاوية الأساسية للـ View
     main_container = ft.Container(
-        padding=20,
+        padding=ft.Padding(20,20,20, 0),
         content=ft.Column(
-            controls=[bannerContainer, controlsContainer],
+            controls=[
+                bannerContainer, 
+                ft.Column(
+                    controls = [
+                        ft.Container(
+                            border_radius = ft.BorderRadius(20,20,0,0),
+                            padding = ft.Padding(20,20,20,20),
+                            bgcolor = '#F9F9F9',
+                            content= controlsContainer
+                        )
+                    ]
+                )
+            ],
             horizontal_alignment=ft.CrossAxisAlignment.STRETCH
         )
     )
