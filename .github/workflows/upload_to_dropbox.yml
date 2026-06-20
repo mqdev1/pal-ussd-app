@@ -23,39 +23,44 @@ jobs:
           exit 1
         fi
 
-     # 3. إعداد لغة بايثون بالإصدار المستقر المتوافق مع المكتبات المطلوبة
+    # 3. تثبيت حزم النظام الأساسية المطلوبة لبناء حزم الأندرويد لـ Flet (Cmake, Ninja, Exts)
+    - name: Install Android Build Dependencies (Ubuntu)
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y git zip unzip autoconf libtool pkg-config zlib1g-dev libncurses5-dev libssl-dev cmake ninja-build
+
+    # 4. إعداد لغة بايثون بالإصدار المستقر المتوافق مع المكتبات المطلوبة
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.11' # إجبار جيت هاب على استخدام 3.11
+        python-version: '3.11' # استخدام 3.11 لضمان استقرار مكتبات kivi/jnius و flet القديمة
 
-    # 4. تثبيت الحزم مع ترقية أداة التثبيت واستخدام إصدار متوافق من pyjnius
+    # 5. تثبيت الحزم مع ترقية أداة التثبيت واستخدام إصدار متوافق من pyjnius و Cython
     - name: Install Python Dependencies
       run: |
         python -m pip install --upgrade pip setuptools wheel
-        pip install cython
+        pip install "cython<3.0.0"  # استخدام إصدار 2.x من Cython يتوافق تماماً مع النسخ القديمة لـ pyjnius و flet
         pip install flet==0.85.3 pyjnius==1.7.0
 
-    # 5. تثبيت جافا (Java JDK 17) المطلوبة والأساسية لبناء حزم الأندرويد
+    # 6. تثبيت جافا (Java JDK 17) المطلوبة والأساسية لبناء حزم الأندرويد وتوليد الـ Gradle
     - name: Set up JDK 17
       uses: actions/setup-java@v4
       with:
         java-version: '17'
         distribution: 'temurin'
 
-    # 6. تشغيل أمر بناء تطبيق الأندرويد بالأسلوب الحديث لنسخة 0.85.3
-    # (قمنا بحذف كلمة src لأن الملفات أصبحت في الجذر الرئيسي)
+    # 7. تشغيل أمر بناء تطبيق الأندرويد بالأسلوب الحديث لنسخة 0.85.3 مع تفعيل وضع التفصيل لمعرفة الأخطاء إن وجدت
     - name: Build Android APK
       run: |
         yes | flet build apk --verbose
 
-    # 7. البحث عن ملف الـ APK الناتج وتجهيزه وتسميته للرفع
+    # 8. البحث عن ملف الـ APK الناتج وتجهيزه وتسميته للرفع
     - name: Locate and Prepare APK
       run: |
         APK_PATH=$(find build/ -name "*.apk" | head -n 1)
         
         if [ -z "$APK_PATH" ]; then
-          echo "::error::لم يتم العثور على ملف الـ APK الناتج عن البناء!"
+          echo "::error::لم يتم العثور على ملف الـ APK الناتج عن البناء! تأكد من توافق ملفات الـ res/xml والمستندات."
           exit 1
         fi
         
@@ -63,8 +68,7 @@ jobs:
         cp "$APK_PATH" ./ussd_pal_app.apk
         echo "تم تجهيز الملف في المسار الرئيسي باسم ussd_pal_app.apk بنجاح."
 
-    # 8. الرفع التلقائي المباشر لملف الـ APK إلى حسابك في Dropbox
-        # 8. الرفع التلقائي المباشر لملف الـ APK إلى حسابك في Dropbox
+    # 9. الرفع التلقائي المباشر لملف الـ APK إلى حسابك في Dropbox
     - name: Upload APK to Dropbox
       env:
         DBX_TOKEN: ${{ secrets.DROPBOX_ACCESS_TOKEN }}
@@ -74,4 +78,3 @@ jobs:
           --header "Dropbox-API-Arg: {\"path\": \"/ussd_pal_app.apk\",\"mode\": \"overwrite\",\"autorename\": true,\"mute\": false,\"strict_conflict\": false}" \
           --header "Content-Type: application/octet-stream" \
           --data-binary @ussd_pal_app.apk
-
