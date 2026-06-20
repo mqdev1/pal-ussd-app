@@ -1,15 +1,51 @@
 import flet as ft
 from Router import Router
-def home_view(page: ft.Page, route:Router)->ft.Control:
 
-    state = {
-        "CURRENT_SERVICE": "JAWWAL",  # القيمة الافتراضية
-        "CURRENT_STEP": 0,
-        "RECIPIENT": "",
-        "AMOUNT": "",
-        "PIN": "",
-        "PALPAY_ACCEPT_OPTION": "1"
-    }
+# تعريف متغيرات الحالة العامة (Global) لتتمكن خدمة الـ Accessibility من قراءتها وتعديلها حياً
+CURRENT_SERVICE = None
+CURRENT_STEP = 0
+RECIPIENT = ""
+AMOUNT = ""
+PIN = ""
+PALPAY_ACCEPT_OPTION = "1"
+
+def home_view(page: ft.Page, route: Router) -> ft.Control:
+    
+    # دالة لفحص إذن إمكانية الوصول وطلبه مباشرة إذا لم يكن مفعلاً
+    def check_and_request_accessibility():
+        try:
+            from jnius import autoclass
+            
+            # استدعاء كلاسات أندرويد المطلوبة
+            Settings = autoclass('android.provider.Settings')
+            PythonActivity = autoclass('org.kivy.android.PythonActivity')
+            Intent = autoclass('android.content.Intent')
+            Uri = autoclass('android.net.Uri')
+            
+            activity = PythonActivity.mActivity
+            content_resolver = activity.getContentResolver()
+            
+            # الفحص هل خدمات الوصول مفعلة بشكل عام
+            accessibility_enabled = Settings.Secure.getInt(
+                content_resolver, 
+                Settings.Secure.ACCESSIBILITY_ENABLED, 
+                0
+            )
+            
+            # إذا لم تكن مفعلة، نقوم بفتح الإعدادات للمستخدم مباشرة لتفعيلها
+            if accessibility_enabled == 0:
+                page.snack_bar = ft.SnackBar(
+                    ft.Text("يرجى تفعيل خدمة الوصول للتطبيق لتمكين الأتمتة التلقائية"), 
+                    open=True
+                )
+                page.update()
+                
+                # فتح شاشة إعدادات خدمات إمكانية الوصول بالنظام
+                intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+                activity.startActivity(intent)
+                
+        except Exception as ex:
+            print(f"Error checking accessibility permission: {ex}")
 
     def dial_ussd(code: str):
         try:
@@ -20,7 +56,7 @@ def home_view(page: ft.Page, route:Router)->ft.Control:
 
             activity = PythonActivity.mActivity
             encoded_code = Uri.encode(code)
-            intent = Intent(Intent.ACTION_DIAL)
+            intent = Intent(Intent.ACTION_DIAL)  
             intent.setData(Uri.parse(f"tel:{encoded_code}"))
             activity.startActivity(intent)
         except Exception as ex:
@@ -29,33 +65,34 @@ def home_view(page: ft.Page, route:Router)->ft.Control:
 
     # دالة موحدة لمعالجة الضغط على زر الإرسال بناءً على الخدمة المختارة
     def handle_send_click(e):
-        state["PIN"] = pin_input.value
-        state["RECIPIENT"] = phoneInput.value
-        state["AMOUNT"] = amountInput.value
+        global CURRENT_SERVICE, CURRENT_STEP, RECIPIENT, AMOUNT, PIN
+        
+        full_phone = f"05{phoneInput.value.strip()}"
+        
+        PIN = pin_input.value.strip()
+        RECIPIENT = full_phone
+        AMOUNT = amountInput.value.strip()
+        CURRENT_STEP = 1  
 
         if serviceDDP.value == "JAWWAL":
-            state["CURRENT_SERVICE"] = "JAWWAL"
+            CURRENT_SERVICE = "JAWWAL"
             dial_ussd("*110#")
         elif serviceDDP.value == "BOP":
-            state["CURRENT_SERVICE"] = "BOP"
+            CURRENT_SERVICE = "BOP"
             dial_ussd("*267#")
         elif serviceDDP.value == "PALPAY":
-            state["CURRENT_SERVICE"] = "PALPAY"
-            # إرسال الكود المباشر المدمج لـ PalPay
-            direct_string = f"*370*1*1*{phoneInput.value}*{amountInput.value}#"
+            CURRENT_SERVICE = "PALPAY"
+            direct_string = f"*370*1*1*{full_phone}*{amountInput.value.strip()}#"
             dial_ussd(direct_string)
 
     phoneMessage = ft.Text("", color=ft.Colors.RED, size=14, visible=False, text_align=ft.TextAlign.RIGHT)
     amountMessage = ft.Text("", color=ft.Colors.RED, size=14, visible=False, text_align=ft.TextAlign.RIGHT)
     pinMessage = ft.Text("", color=ft.Colors.RED, size=14, visible=False, text_align=ft.TextAlign.RIGHT)
 
-    # إضافة قائمة منسدلة أنيقة لاختيار الخدمة المطلوبة
     serviceDDP = ft.Dropdown(
         expand=True,
-        label_style = ft.TextStyle(
-            color = ft.Colors.BLACK
-        ),
-        value="JAWWAL", # افتراضي جوال باي
+        label_style=ft.TextStyle(color=ft.Colors.BLACK),
+        value="JAWWAL",
         color=ft.Colors.BLACK,
         border_color=ft.Colors.TRANSPARENT,
         options=[
@@ -64,9 +101,10 @@ def home_view(page: ft.Page, route:Router)->ft.Control:
             ft.dropdown.Option("PALPAY", "بال بي (PalPay)"),
         ]
     )
+    
     service_dropdown = ft.Column(
         horizontal_alignment=ft.CrossAxisAlignment.CENTER,
-        controls = [
+        controls=[
             ft.Text("اختر نوع الخدمة", size=15, color=ft.Colors.BLACK, weight=ft.FontWeight.W_500),
             ft.Container(
                 bgcolor=ft.Colors.WHITE,
@@ -85,7 +123,7 @@ def home_view(page: ft.Page, route:Router)->ft.Control:
         disabled=True,
         bgcolor=ft.Colors.GREEN_600,
         color=ft.Colors.WHITE,
-        on_click=handle_send_click # تم ربط الدالة الديناميكية الموحدة هنا
+        on_click=handle_send_click
     )
 
     def Alert(title, text):
@@ -99,11 +137,11 @@ def home_view(page: ft.Page, route:Router)->ft.Control:
 
     def validateInputs():
         if not phoneInput.value or len(phoneInput.value) != 8:
-            phoneMessage.value = "يرجى ادخال رقم الهاتف المكون من 8 أرقام"
+            phoneMessage.value = "يرجى ادخال خانات رقم الهاتف الـ 8 المتبقية"
             phoneMessage.visible = True
             BtnSendMoney.disabled = True
         elif not phoneInput.value.startswith(('9', '6')):
-            phoneMessage.value = "يجب ان يبدأ رقم الهاتف بالرقم 9 او 6"
+            phoneMessage.value = "يجب ان يبدأ رقم الهاتف بعد الـ 05 بالرقم 9 او 6"
             phoneMessage.visible = True
             BtnSendMoney.disabled = True
         elif not amountInput.value or amountInput.value == '0':
@@ -139,7 +177,7 @@ def home_view(page: ft.Page, route:Router)->ft.Control:
 
     phoneInput = ft.TextField(
         keyboard_type=ft.KeyboardType.PHONE,
-        hint_text = '123456789',
+        hint_text='9xxxxxxx',
         color=ft.Colors.BLACK, 
         border_color=ft.Colors.TRANSPARENT, 
         expand=1,
@@ -169,7 +207,6 @@ def home_view(page: ft.Page, route:Router)->ft.Control:
         content=ft.Column(
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             controls=[
-                # حقن حقل الاختيار المنسدل الجديد في أعلى قائمة التحكم
                 service_dropdown,
                 ft.Container(padding=10),
                 
@@ -239,10 +276,15 @@ def home_view(page: ft.Page, route:Router)->ft.Control:
         )
     )
     
-    return ft.Container(
-        padding = 20,
-        content = ft.Column(
+    # الحاوية الأساسية للـ View
+    main_container = ft.Container(
+        padding=20,
+        content=ft.Column(
             controls=[bannerContainer, controlsContainer],
             horizontal_alignment=ft.CrossAxisAlignment.STRETCH
-        )
+        ),
+        # استدعاء دالة طلب الإذن فور ظهور الحاوية والواجهة على الشاشة
+        on_mount=lambda _: check_and_request_accessibility()
     )
+    
+    return main_container
