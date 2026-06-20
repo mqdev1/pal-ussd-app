@@ -1,15 +1,15 @@
 from jnius import autoclass
 
-# استدعاء مكتبات أندرويد الأساسية للنظام عبر Pyjnius
+# استدعاء مكتبات أندرويد الأساسية
 AccessibilityEvent = autoclass('android.view.accessibility.AccessibilityEvent')
 Bundle = autoclass('android.os.Bundle')
 
 def onAccessibilityEvent(event):
     """
     هذه الدالة تراقب شاشات الـ USSD التابعة للنظام، وتقرأ الخطوة الحالية
-    من ملف التطبيق الأساسي (main.py)، ثم تقوم بإدخال البيانات والضغط على إرسال تلقائياً.
+    من ملف العرض (home_view)، ثم تقوم بإدخال البيانات والضغط على إرسال تلقائياً.
     """
-    import main  # استيراد المتغيرات الحية من تطبيق Flet الخاص بك
+    import home_view  # استيراد المتغيرات الحية من موديول العرض لتحديث الحالات
     
     # التفاعل فقط عندما تتغير الشاشة أو تظهر نافذة بوب-أب (Pop-up) جديدة للـ USSD
     if event.getEventType() == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED:
@@ -17,11 +17,11 @@ def onAccessibilityEvent(event):
         if not source_node:
             return
             
-        # تحديد حقل الإدخال وزر الإرسال الافتراضي في نظام أندرويد
+        # تحديد حقل الإدخال وزر الإرسال الافتراضي في نظام أندرويد لـ USSD
         input_fields = source_node.findAccessibilityNodeInfosByViewId("com.android.phone:id/input_field")
         send_buttons = source_node.findAccessibilityNodeInfosByViewId("android:id/button1")
         
-        # التأكد من وجود حقل الإدخال وزر الإرسال على الشاشة قبل بدئ العملية
+        # التأكد من وجود حقل الإدخال وزر الإرسال على الشاشة قبل بدء العملية
         if input_fields.size() > 0 and send_buttons.size() > 0:
             input_box = input_fields.get(0)
             send_btn = send_buttons.get(0)
@@ -37,52 +37,51 @@ def onAccessibilityEvent(event):
                 send_btn.performAction(16)
 
             # =================================================================
-            # الخدمة 1: نظام أتمتة بال بي (PalPay) - (محدث ليعمل على خطوتين)
+            # الخدمة 1: نظام أتمتة جوال بي (JawwalPay)
             # =================================================================
-            if main.CURRENT_SERVICE == "PALPAY":
-                if main.CURRENT_STEP == 1:
-                    # الخطوة 1: إدخال الرقم السري (PIN) في الشاشة الأولى
-                    send_payload(main.PIN)
-                    main.CURRENT_STEP = 2  # الانتقال للخطوة التالية (شاشة التأكيد)
-                    
-                elif main.CURRENT_STEP == 2:
-                    # الخطوة 2: إدخال خيار التأكيد أو القبول (1 أو 2) حسب اختيار المستخدم
-                    send_payload(main.PALPAY_ACCEPT_OPTION)
-                    main.CURRENT_SERVICE = None  # إنهاء الجلسة وتصفير العدادات
-                    main.CURRENT_STEP = 0
+            if home_view.CURRENT_SERVICE == "JAWWAL":
+                if home_view.CURRENT_STEP == 1:
+                    send_payload("1")  # الخيار رقم 1: تحويل أموال للمحافظ
+                    home_view.CURRENT_STEP = 2
+                elif home_view.CURRENT_STEP == 2:
+                    send_payload(home_view.AMOUNT)     # إدخال قيمة المبلغ
+                    home_view.CURRENT_STEP = 3
+                elif home_view.CURRENT_STEP == 3:
+                    send_payload(home_view.RECIPIENT)  # إدخال رقم هاتف المستلم الكامل
+                    home_view.CURRENT_STEP = 4
+                elif home_view.CURRENT_STEP == 4:
+                    send_payload(home_view.PIN)        # إدخال الرقم السري للمحفظة
+                    home_view.CURRENT_SERVICE = None   # تصفير الجلسة
+                    home_view.CURRENT_STEP = 0
 
             # =================================================================
             # الخدمة 2: نظام أتمتة بنك فلسطين (BOP)
             # =================================================================
-            elif main.CURRENT_SERVICE == "BOP":
-                if main.CURRENT_STEP == 1:
+            elif home_view.CURRENT_SERVICE == "BOP":
+                if home_view.CURRENT_STEP == 1:
                     send_payload("1")  # الخيار رقم 1 يمثل عادةً "تحويل أموال"
-                    main.CURRENT_STEP = 2
-                elif main.CURRENT_STEP == 2:
-                    send_payload(main.RECIPIENT)  # إدخال رقم حساب المستلم
-                    main.CURRENT_STEP = 3
-                elif main.CURRENT_STEP == 3:
-                    send_payload(main.AMOUNT)     # إدخال المبلغ المراد تحويله
-                    main.CURRENT_STEP = 4
-                elif main.CURRENT_STEP == 4:
-                    send_payload(main.PIN)        # إدخال الرقم السري لإتمام العملية
-                    main.CURRENT_SERVICE = None   # إنهاء الجلسة وتصفير العدادات
-                    main.CURRENT_STEP = 0
+                    home_view.CURRENT_STEP = 2
+                elif home_view.CURRENT_STEP == 2:
+                    send_payload(home_view.RECIPIENT)  # إدخال رقم حساب/هاتف المستلم
+                    home_view.CURRENT_STEP = 3
+                elif home_view.CURRENT_STEP == 3:
+                    send_payload(home_view.AMOUNT)     # إدخال المبلغ المراد تحويله
+                    home_view.CURRENT_STEP = 4
+                elif home_view.CURRENT_STEP == 4:
+                    send_payload(home_view.PIN)        # إدخال الرقم السري لإتمام العملية
+                    home_view.CURRENT_SERVICE = None   
+                    home_view.CURRENT_STEP = 0
 
             # =================================================================
-            # الخدمة 3: نظام أتمتة جوال بي (JawwalPay)
+            # الخدمة 3: نظام أتمتة بال بي (PalPay) - معالجة السلسلة المباشرة
             # =================================================================
-            elif main.CURRENT_SERVICE == "JAWWAL":
-                if main.CURRENT_STEP == 1:
-                    send_payload("1")  # الخيار رقم 1 يمثل بدء عملية التحويل للمحافظ
-                    main.CURRENT_STEP = 2
-                elif main.CURRENT_STEP == 2:
-                    send_payload(main.AMOUNT)     # إدخال قيمة المبلغ
-                    main.CURRENT_STEP = 3
-                elif main.CURRENT_STEP == 3:
-                    send_payload(main.RECIPIENT)  # إدخال رقم هاتف المستلم (صاحب المحفظة)
-                    main.CURRENT_STEP = 4
-                elif main.CURRENT_STEP == 4:
-                    send_payload(main.PIN)        # إدخال الرقم السري للمحفظة
-                    main.CURRENT_SERVICE = None   # إنهاء الجلسة وتصفير العدادات
-                    main.CURRENT_STEP = 0
+            elif home_view.CURRENT_SERVICE == "PALPAY":
+                # بما أنك أرسلت السلسلة المباشرة المدمجة كاملة مثل (*370*1*1*الرقم*المبلغ#)
+                # فإن الشاشة التي ستظهر ستطلب غالباً الرقم السري فقط أو التأكيد مباشرة
+                if home_view.CURRENT_STEP == 1:
+                    send_payload(home_view.PIN)  # إدخال الرقم السري في الشاشة الأولى المتوقعة
+                    home_view.CURRENT_STEP = 2
+                elif home_view.CURRENT_STEP == 2:
+                    send_payload(home_view.PALPAY_ACCEPT_OPTION) # خيار التأكيد (1)
+                    home_view.CURRENT_SERVICE = None   
+                    home_view.CURRENT_STEP = 0
