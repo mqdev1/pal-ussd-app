@@ -282,9 +282,9 @@ def home_view(page: ft.Page, route: Router) -> ft.Control:
         content=ft.Column(
             controls=[bannerContainer, controlsContainer],
             horizontal_alignment=ft.CrossAxisAlignment.STRETCH
-        ),
-        # استدعاء دالة طلب الإذن فور ظهور الحاوية والواجهة على الشاشة
-        on_mount=lambda _: check_and_request_accessibility()
+        )
     )
+
+    page.run_task(lambda: check_and_request_accessibility())
     
     return main_container
